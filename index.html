@@ -2,48 +2,133 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fbfdfd">
 <title>Miss You Much Ministry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#faf6f0;--card:#fff;--ink:#2b2a33;--mute:#6d6a75;--line:#e6dfd3;--acc:#8a3b4f;--acc-ink:#fff;--soft:#f3e7e9;--err:#b3261e}
-@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#1d1b20;--card:#27242b;--ink:#efeaf0;--mute:#a6a1ad;--line:#3a3640;--acc:#e08aa0;--acc-ink:#2a1219;--soft:#3a2830;--err:#ff8a80}}
+:root{
+  --bg:#fbfdfd;--card:#fff;--ink:#1f2a2e;--mute:#62747a;--line:#e7eeee;--chip:#eef4f4;
+  --acc:#2c7a75;--acc-h:#23645f;--acc-ink:#fff;--tint:#e4f2f0;
+  --err:#b42318;--err-ink:#fff;--ring:rgba(44,122,117,.3);
+  --sans:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;
+  --bg:#101a1c;--card:#172426;--ink:#e9f1f1;--mute:#9bb0b3;--line:#263a3d;--chip:#1f3033;
+  --acc:#7fcfc7;--acc-h:#9adbd4;--acc-ink:#0b1e1d;--tint:#1c3335;
+  --err:#ff9a90;--err-ink:#2b0d0a;--ring:rgba(127,207,199,.38)}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Georgia,"Times New Roman",serif}
-.wrap{max-width:860px;margin:0 auto;padding:20px 16px 60px}
-header{text-align:center;padding:12px 0 8px}
-h1{font-size:1.9rem;margin:0;color:var(--acc)}
-.tag{color:var(--mute);margin:4px 0 0;font-style:italic}
-nav{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:18px 0}
-nav button,.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 16px;border-radius:999px;cursor:pointer}
-nav button.on,.btn.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
-.btn.sm{padding:4px 12px;font-size:.85rem}.btn.del{color:var(--err)}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
-h2{margin:0 0 12px;font-size:1.25rem}
-label{display:block;font-size:.9rem;color:var(--mute);margin:10px 0 3px}
-input,select,textarea{width:100%;font:inherit;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
-textarea{min-height:80px;resize:vertical}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.55 var(--sans)}
+.wrap{max-width:720px;margin:0 auto;padding:0 18px 120px}
+header{padding:26px 0 6px}
+h1{margin:0;font-size:1.75rem;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.tag{margin:4px 0 0;font-size:1.05rem;color:var(--mute)}
+h2{margin:0;font-size:1.2rem;font-weight:800;letter-spacing:-.01em}
+h3{margin:0;font-size:1rem;font-weight:800}
+p{margin:0}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* navigation: underline tabs on wide screens, bottom bar on phones */
+nav{display:flex;gap:6px;margin:18px 0 22px;border-bottom:1px solid var(--line)}
+nav:empty{display:none}
+nav button{display:inline-flex;align-items:center;gap:8px;font:600 1rem var(--sans);color:var(--mute);background:none;border:0;border-bottom:3px solid transparent;padding:10px 12px 11px;margin-bottom:-1px;cursor:pointer}
+nav button:hover{color:var(--ink)}
+nav button.on{color:var(--acc);border-bottom-color:var(--acc)}
+.ic{width:20px;height:20px;flex:none}
+@media(max-width:639px){
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:30;margin:0;gap:0;background:var(--card);border-top:1px solid var(--line);border-bottom:0;padding:4px 6px calc(4px + env(safe-area-inset-bottom))}
+  nav button{flex:1;flex-direction:column;gap:2px;font-size:.78rem;border-bottom:0;border-radius:10px;padding:8px 4px;margin:0}
+  nav button.on{background:var(--tint)}
+  header{padding-bottom:18px}
+}
+
+/* surfaces */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:18px}
+.panel.flush{padding:0;overflow:hidden}
+.panel-h{padding:20px 20px 4px}
+.sum{color:var(--mute);margin-top:2px}
+.banner{background:var(--tint);border-radius:12px;padding:12px 14px;margin-bottom:18px}
+
+/* forms */
+.field{margin-top:16px}
+.field:first-of-type{margin-top:0}
+label{display:block;font-weight:600;font-size:.95rem;margin-bottom:6px}
+input,select,textarea{width:100%;min-height:48px;font:400 1rem var(--sans);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 13px}
+textarea{min-height:96px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:3px solid var(--ring);border-color:var(--acc)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:560px){.row{grid-template-columns:1fr}}
-.filters{display:flex;gap:10px;flex-wrap:wrap}.filters>div{flex:1;min-width:180px}
-.visit,.item{border-top:1px solid var(--line);padding:12px 0;display:flex;gap:12px;justify-content:space-between;align-items:flex-start}
-.visit:first-of-type,.item:first-of-type{border-top:0}
-.date{background:var(--soft);color:var(--acc);border-radius:10px;padding:6px 10px;text-align:center;min-width:64px;font-size:.85rem;font-weight:bold}
-.meta{flex:1}.meta b{color:var(--acc)}
-.note{color:var(--mute);font-size:.92rem;margin-top:3px}
-.empty{color:var(--mute);text-align:center;padding:18px}
-.msg{padding:10px 12px;border-radius:8px;background:var(--soft);margin:10px 0}.msg.err{color:var(--err)}
-.sub{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
-.foot{text-align:center;margin-top:24px;font-size:.9rem;color:var(--mute)}
+.hint{color:var(--mute);font-size:.92rem;margin-top:6px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:10px 18px;font:600 1rem var(--sans);color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.btn:hover{border-color:var(--mute)}
+.btn:focus-visible,nav button:focus-visible,a:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
+.btn.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+.btn.pri:hover{background:var(--acc-h);border-color:var(--acc-h)}
+.btn.sm{min-height:36px;padding:4px 12px;font-size:.9rem}
+.btn.quiet{border-color:transparent;background:transparent;color:var(--mute)}
+.btn.quiet:hover{color:var(--ink);background:var(--chip)}
+.btn.danger{color:var(--err)}
+.btn.danger-fill{background:var(--err);color:var(--err-ink);border-color:var(--err)}
+@media(max-width:560px){.actions .btn.pri{flex:1}}
+
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+.seg .btn.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* filters and visit list */
+.filters{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;padding:16px 20px 18px}
+@media(max-width:560px){.filters{grid-template-columns:1fr}}
+.month{padding:10px 20px;background:var(--bg);border-top:1px solid var(--line);font-weight:800;font-size:.95rem;color:var(--mute)}
+.visit{display:grid;grid-template-columns:62px 1fr auto;gap:16px;align-items:start;padding:16px 20px;border-top:1px solid var(--line)}
+.visit .who b,.item b{font-weight:800}
+.note{color:var(--mute);font-size:.95rem;margin-top:3px;overflow-wrap:anywhere}
+.dchip{width:58px;height:58px;border-radius:14px;background:var(--tint);color:var(--acc);display:grid;place-content:center;text-align:center;line-height:1}
+.dchip i{display:block;font-style:normal;font-weight:600;font-size:.78rem;margin-bottom:3px}
+.dchip b{display:block;font-weight:800;font-size:1.3rem}
+.empty{padding:34px 20px;text-align:center;color:var(--mute)}
+.empty .btn{margin-top:14px}
+
+/* admin lists */
+.item{display:grid;grid-template-columns:44px 1fr auto;gap:14px;align-items:start;padding:14px 20px;border-top:1px solid var(--line)}
+.av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--tint);color:var(--acc);font-weight:800;font-size:.95rem}
+.panel-h+.item,.panel-h+.empty{margin-top:12px}
+
+/* unlock and loading */
+.lockrow{display:flex;gap:14px;align-items:flex-start}
+.lockrow .av{width:48px;height:48px}
+.sk{height:16px;border-radius:8px;background:var(--chip);margin-top:12px;animation:sk 1.4s ease-in-out infinite}
+@keyframes sk{50%{opacity:.5}}
+@media(prefers-reduced-motion:reduce){.sk{animation:none}}
+
+.foot{display:flex;gap:16px;flex-wrap:wrap;margin-top:26px;color:var(--mute);font-size:.92rem}
+.foot a{color:var(--mute)}
+
+/* toasts and dialog */
+#toasts{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:50;display:grid;gap:8px;width:min(92vw,420px);pointer-events:none}
+.toast{background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:12px;font-weight:500;box-shadow:0 6px 24px rgba(10,14,30,.25)}
+.toast.err{background:var(--err);color:var(--err-ink)}
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);padding:22px;width:min(92vw,400px)}
+dialog::backdrop{background:rgba(10,14,30,.5)}
+dialog p{color:var(--mute);margin-top:6px}
+.dact{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
 </style>
 </head>
 <body>
 <div class="wrap">
-<header><h1>💌 Miss You Much Ministry</h1><p class="tag">Home visits for those who can’t make it to church</p></header>
-<nav id="nav"></nav>
+<header><h1>Miss You Much Ministry</h1><p class="tag">Home visits for those who can’t make it to church</p></header>
+<nav id="nav" aria-label="Sections"></nav>
 <div id="status"></div>
 <main id="main"></main>
 <div class="foot" id="foot"></div>
 </div>
+<div id="toasts" role="status" aria-live="polite"></div>
+<dialog id="dlg"><form method="dialog"><h3 id="dtitle"></h3><p id="dmsg"></p>
+<div class="dact"><button class="btn" value="cancel">Cancel</button><button class="btn pri" id="dok" value="ok"></button></div></form></dialog>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // ===== CONFIG: paste from Supabase > Project Settings > API =====
@@ -57,14 +142,37 @@ const val=id=>document.getElementById(id).value;
 const PW_KEY="mymm_passcode";
 const store=v=>{try{v?localStorage.setItem(PW_KEY,v):localStorage.removeItem(PW_KEY)}catch(e){}};
 const stored=()=>{try{return localStorage.getItem(PW_KEY)||""}catch(e){return ""}};
-const S={tab:"dash",sub:"vol",user:null,admin:false,unlocked:false,pass:stored(),pwSet:false,vols:[],people:[],vd:{},pd:{},visits:[],admins:[],fv:"",fp:"",msg:null};
+const S={loading:true,tab:"dash",sub:"vol",user:null,admin:false,unlocked:false,pass:stored(),pwSet:false,vols:[],people:[],vd:{},pd:{},visits:[],admins:[],fv:"",fp:""};
 
-function todayLocal(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
-function fmtDate(d){const x=new Date(d+"T12:00:00");return isNaN(x)?{m:"",d:d}:{m:x.toLocaleString("en-US",{month:"short"}),d:x.getDate()+", "+x.getFullYear()}}
-function flash(t,err){S.msg={t,err};render();if(!err)setTimeout(()=>{if(S.msg&&S.msg.t===t){S.msg=null;render()}},4000)}
+const IC={
+  hist:'<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/>',
+  cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
+  lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'
+};
+const ic=(n,c="")=>`<svg class="ic ${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
+const hash=s=>{let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))>>>0;return h};
+const initials=n=>String(n).trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase()||"?";
+const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const todayLocal=()=>ymd(new Date());
+const dparts=s=>{const x=new Date(s+"T12:00:00");return isNaN(x)?{mon:"",day:s,month:""}:{mon:x.toLocaleString("en-US",{month:"short"}),day:x.getDate(),month:x.toLocaleString("en-US",{month:"long",year:"numeric"})}};
+
+function toast(t,err){
+  const el=document.createElement("div");el.className="toast"+(err?" err":"");el.textContent=t;
+  document.getElementById("toasts").appendChild(el);setTimeout(()=>el.remove(),err?7000:4000);
+}
+function ask(title,msg,ok,danger){
+  return new Promise(res=>{
+    const d=document.getElementById("dlg"),b=document.getElementById("dok");
+    document.getElementById("dtitle").textContent=title;document.getElementById("dmsg").textContent=msg;
+    b.textContent=ok;b.className="btn "+(danger?"danger-fill":"pri");
+    d.returnValue="";d.onclose=()=>res(d.returnValue==="ok");d.showModal();
+  });
+}
 
 async function load(){
-  let admin=false,admins=[],unlocked=false,vols=[],people=[],visits=[],vd={},pd={},pwSet=false,msg=S.msg;
+  let admin=false,admins=[],unlocked=false,vols=[],people=[],visits=[],vd={},pd={},pwSet=false,note=null;
   if(S.user){
     const a=await sb.from("admins").select("email").order("email");
     admins=a.data||[];admin=admins.length>0;
@@ -83,116 +191,147 @@ async function load(){
   }else if(S.pass){
     const [l,vis]=await Promise.all([sb.rpc("get_lists",{p:S.pass}),sb.rpc("get_visits",{p:S.pass})]);
     if(l.error||vis.error){
-      const bad=/Incorrect passcode/i.test((l.error||vis.error).message||"");
-      if(bad){S.pass="";store("");msg={t:"Please enter the passcode again.",err:true}}
+      if(/Incorrect passcode/i.test((l.error||vis.error).message||"")){S.pass="";store("");note="The passcode has changed. Enter the new one to continue."}
     }else{
       unlocked=true;vols=(l.data&&l.data.volunteers)||[];people=(l.data&&l.data.people)||[];visits=vis.data||[];
     }
   }
-  Object.assign(S,{admin,admins,unlocked,vols,people,visits,vd,pd,pwSet,msg});
+  Object.assign(S,{loading:false,admin,admins,unlocked,vols,people,visits,vd,pd,pwSet});
   render();
+  if(note)toast(note,true);
 }
 
 function render(){
   const locked=!S.admin&&!S.unlocked;
   const tabs=[];
-  if(!locked){tabs.push(["dash","Dashboard"],["sched","Schedule a visit"]);if(S.admin)tabs.push(["admin","Admin"])}
+  if(!locked){tabs.push(["dash","Dashboard","hist"],["sched","Connect with someone","cal"]);if(S.admin)tabs.push(["admin","Admin","users"])}
   if(S.tab!=="login"&&!locked&&!tabs.some(t=>t[0]===S.tab))S.tab="dash";
-  document.getElementById("nav").innerHTML=tabs.map(([k,l])=>`<button data-t="${k}" class="${S.tab===k?"on":""}">${l}</button>`).join("");
-  document.getElementById("status").innerHTML=S.msg?`<div class="msg ${S.msg.err?"err":""}">${esc(S.msg.t)}</div>`:(S.user&&!S.admin?`<div class="msg">Signed in as ${esc(S.user.email)}, but this email is not an admin.</div>`:"");
-  const parts=[];
-  if(S.user)parts.push(`${esc(S.user.email)} · <a href="#" id="signout">Sign out</a>`);else parts.push(`<a href="#" id="gologin">Admin sign in</a>`);
-  if(S.unlocked&&!S.admin)parts.push(`<a href="#" id="lock">Lock this device</a>`);
-  document.getElementById("foot").innerHTML=parts.join(" · ");
-  document.getElementById("main").innerHTML=S.tab==="login"?login():locked?unlock():S.tab==="sched"?sched():S.tab==="dash"?dash():admin();
+  document.getElementById("nav").innerHTML=tabs.map(([k,l,i])=>`<button data-t="${k}" class="${S.tab===k?"on":""}" ${S.tab===k?'aria-current="page"':""}>${ic(i)}<span>${l}</span></button>`).join("");
+  document.getElementById("status").innerHTML=S.user&&!S.admin&&!S.loading?`<div class="banner">You’re signed in as ${esc(S.user.email)}, but that email isn’t on the admin list. Ask an admin to add it.</div>`:"";
+  const foot=[];
+  foot.push(S.user?`<span>${esc(S.user.email)}</span><a href="#" id="signout">Sign out</a>`:`<a href="#" id="gologin">Admin sign in</a>`);
+  if(S.unlocked&&!S.admin)foot.push(`<a href="#" id="lock">Lock this device</a>`);
+  document.getElementById("foot").innerHTML=foot.join("");
+  document.getElementById("main").innerHTML=S.tab==="login"?login():S.loading?skeleton():locked?unlock():S.tab==="sched"?sched():S.tab==="dash"?dash():admin();
 }
 
-function login(){return `<div class="card"><h2>Admin sign in</h2><p class="note">Enter your admin email and we’ll send you a one-time sign-in link.</p>
-<label>Email</label><input id="le" type="email" autocomplete="email"><p><button class="btn pri" id="sendlink">Send link</button> <button class="btn" id="cancellogin">Cancel</button></p></div>`}
+function skeleton(){return `<div class="panel" aria-busy="true"><div class="sk" style="width:38%"></div><div class="sk"></div><div class="sk" style="width:72%"></div></div>`}
 
-function unlock(){return `<div class="card"><h2>Volunteer access</h2><p class="note">Enter the ministry passcode to see recent visits and schedule a visit. If you don’t have it, ask a ministry leader.</p>
-<label>Passcode</label><input id="pw" type="password" autocomplete="current-password"><p><button class="btn pri" id="unlock">Unlock</button></p></div>`}
+function login(){return `<div class="panel"><h2>Admin sign in</h2><p class="sum">Enter your admin email and we’ll send you a sign-in link.</p>
+<div class="field" style="margin-top:16px"><label for="le">Email</label><input id="le" type="email" autocomplete="email" inputmode="email"></div>
+<div class="actions"><button class="btn pri" id="sendlink">Send sign-in link</button><button class="btn quiet" id="cancellogin">Cancel</button></div></div>`}
+
+function unlock(){return `<div class="panel"><div class="lockrow"><span class="av">${ic("lock")}</span><div><h2>Volunteer access</h2>
+<p class="sum">Enter the passcode from your ministry leader to see recent visits and connect with someone.</p></div></div>
+<div class="field" style="margin-top:18px"><label for="pw">Passcode</label><input id="pw" type="password" autocomplete="current-password"></div>
+<div class="actions"><button class="btn pri" id="unlock">Unlock</button></div></div>`}
 
 function sched(){
   const opt=a=>`<option value="">Choose…</option>`+a.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join("");
-  return `<div class="card"><h2>Set up a new visit</h2>
-  ${!S.vols.length||!S.people.length?`<div class="msg">An admin needs to add at least one volunteer and one person to be visited first.</div>`:""}
-  <label>Volunteer</label><select id="sv">${opt(S.vols)}</select>
-  <label>Person to be visited</label><select id="sp">${opt(S.people)}</select>
-  <label>Date</label><input type="date" id="sd" value="${todayLocal()}">
-  <label>Comments</label><textarea id="sc" maxlength="1000" placeholder="Anything to note about this visit…"></textarea>
-  <p><button class="btn pri" id="savevisit">Save visit</button></p></div>`;
+  const none=!S.vols.length||!S.people.length;
+  return `<div class="panel"><h2>Connect</h2>
+  ${none?`<div class="banner" style="margin:14px 0 0">An admin needs to add at least one volunteer and one person to visit before you can connect.</div>`:""}
+  <div class="field" style="margin-top:16px"><label for="sv">Volunteer</label><select id="sv">${opt(S.vols)}</select></div>
+  <div class="field"><label for="sp">Person to visit</label><select id="sp">${opt(S.people)}</select></div>
+  <div class="field"><label for="sd">Date</label><input type="date" id="sd" value="${todayLocal()}"></div>
+  <div class="field"><label for="sc">This is for</label><textarea id="sc" maxlength="1000" placeholder="For example, a birthday visit, communion, or a ride to church"></textarea></div>
+  <div class="actions"><button class="btn pri" id="savevisit">Save</button></div></div>`;
 }
 
+function stats(){
+  const c=new Date();c.setDate(c.getDate()-30);const cut=ymd(c);
+  const r=S.visits.filter(v=>v.visit_date>=cut);
+  return{n:r.length,vols:new Set(r.map(v=>v.volunteer_id||v.volunteer_name)).size,ppl:new Set(r.map(v=>v.person_id||v.person_name)).size};
+}
 function dash(){
   let v=S.visits;
   if(S.fv)v=v.filter(x=>x.volunteer_id===S.fv);
   if(S.fp)v=v.filter(x=>x.person_id===S.fp);
-  const opt=(arr,sel)=>`<option value="">All</option>`+arr.map(o=>`<option value="${esc(o.id)}" ${o.id===sel?"selected":""}>${esc(o.name)}</option>`).join("");
-  return `<div class="card"><h2>Recent visits</h2>
-  <div class="filters"><div><label>Volunteer</label><select id="fv">${opt(S.vols,S.fv)}</select></div>
-  <div><label>Person visited</label><select id="fp">${opt(S.people,S.fp)}</select></div></div>
-  <div style="margin-top:12px">${v.length?v.map(x=>{const d=fmtDate(x.visit_date);return `<div class="visit"><div class="date">${esc(d.m)}<br>${esc(d.d)}</div>
-  <div class="meta"><b>${esc(x.volunteer_name)}</b> visited <b>${esc(x.person_name)}</b>${x.comment?`<div class="note">${esc(x.comment)}</div>`:""}</div>
-  ${S.admin?`<button class="btn sm del" data-delvisit="${esc(x.id)}">Delete</button>`:""}</div>`}).join(""):`<div class="empty">No visits to show yet.</div>`}</div></div>`;
+  const s=stats(),plural=(n,a,b)=>n===1?a:b;
+  const sum=s.n?`${s.n} ${plural(s.n,"visit","visits")} in the last 30 days. ${s.vols} ${plural(s.vols,"volunteer","volunteers")} reached ${s.ppl} ${plural(s.ppl,"person","people")}.`:"No visits in the last 30 days.";
+  const opt=(arr,sel)=>`<option value="">Everyone</option>`+arr.map(o=>`<option value="${esc(o.id)}" ${o.id===sel?"selected":""}>${esc(o.name)}</option>`).join("");
+  let body="";
+  if(!v.length){
+    body=(S.fv||S.fp)?`<div class="empty">No visits match these filters.<br><button class="btn" id="clearf">Clear filters</button></div>`
+      :`<div class="empty">No visits yet.<br><button class="btn pri" data-t="sched">Connect with someone</button></div>`;
+  }else{
+    let last="";
+    body=v.map(x=>{
+      const d=dparts(x.visit_date),head=d.month!==last?`<div class="month">${esc(d.month)}</div>`:"";last=d.month;
+      return head+`<div class="visit"><div class="dchip" aria-hidden="true"><div><i>${esc(d.mon)}</i><b>${esc(d.day)}</b></div></div>
+      <div><div class="who"><b>${esc(x.volunteer_name)}</b> visited <b>${esc(x.person_name)}</b></div>${x.comment?`<div class="note">${esc(x.comment)}</div>`:""}</div>
+      ${S.admin?`<button class="btn quiet danger sm" data-delvisit="${esc(x.id)}" aria-label="Delete this visit">${ic("trash")}</button>`:"<span></span>"}</div>`;
+    }).join("");
+  }
+  return `<div class="panel flush"><div class="panel-h"><h2>Recent visits</h2><p class="sum">${esc(sum)}</p></div>
+  <div class="filters"><div><label for="fv">Volunteer</label><select id="fv">${opt(S.vols,S.fv)}</select></div>
+  <div><label for="fp">Person visited</label><select id="fp">${opt(S.people,S.fp)}</select></div>
+  ${S.fv||S.fp?`<button class="btn quiet" id="clearf">Clear</button>`:"<span></span>"}</div>${body}</div>`;
 }
 
 function admin(){
-  const sub=`<div class="sub">${[["vol","Volunteers"],["per","People to visit"],["adm","Admins"],["pw","Passcode"]].map(([k,l])=>`<button class="btn sm ${S.sub===k?"pri":""}" data-sub="${k}">${l}</button>`).join("")}</div>`;
-  if(S.sub==="pw")return sub+`<div class="card"><h2>Volunteer passcode</h2>
-  <p class="note">Volunteers enter this passcode to see recent visits and schedule new ones. ${S.pwSet?"A passcode is currently set.":"<b>No passcode is set yet, so only admins can use the site.</b>"} Changing it asks volunteers to enter the new one.</p>
-  <label>New passcode (at least 4 characters)</label><input id="npw" type="text" autocomplete="off"><p><button class="btn pri" id="setpw">Save passcode</button></p></div>`;
-  if(S.sub==="adm")return sub+`<div class="card"><h2>Add an admin</h2><p class="note">They sign in with this email using a one-time link.</p>
-  <label>Email</label><input id="nae" type="email"><p><button class="btn pri" id="addadmin">Add admin</button></p></div>
-  <div class="card"><h2>Admins (${S.admins.length})</h2>${S.admins.map(a=>`<div class="item"><div>${esc(a.email)}${a.email===(S.user.email||"").toLowerCase()?` <span class="note">(you)</span>`:""}</div>
-  ${a.email===(S.user.email||"").toLowerCase()?"":`<button class="btn sm del" data-deladmin="${esc(a.email)}">Remove</button>`}</div>`).join("")}</div>`;
+  const sub=`<div class="seg">${[["vol","Volunteers"],["per","People to visit"],["adm","Admins"],["pw","Passcode"]].map(([k,l])=>`<button class="btn sm ${S.sub===k?"on":""}" data-sub="${k}">${l}</button>`).join("")}</div>`;
+  if(S.sub==="pw")return sub+`<div class="panel"><h2>Volunteer passcode</h2>
+  <p class="sum">${S.pwSet?"Volunteers enter this passcode to see visits and connect with someone. Changing it asks them to enter the new one.":"No passcode is set yet, so only admins can use the site. Set one to give volunteers access."}</p>
+  <div class="field" style="margin-top:16px"><label for="npw">New passcode</label><input id="npw" type="text" autocomplete="off"><p class="hint">Use at least 4 characters. Avoid names and birthdays.</p></div>
+  <div class="actions"><button class="btn pri" id="setpw">Save passcode</button></div></div>`;
+  if(S.sub==="adm"){
+    const me=(S.user.email||"").toLowerCase();
+    return sub+`<div class="panel"><h2>Add an admin</h2><p class="sum">They’ll sign in with this email using a link we send them.</p>
+    <div class="field" style="margin-top:16px"><label for="nae">Email</label><input id="nae" type="email" inputmode="email"></div>
+    <div class="actions"><button class="btn pri" id="addadmin">Add admin</button></div></div>
+    <div class="panel flush"><div class="panel-h"><h2>Admins (${S.admins.length})</h2></div>${S.admins.map(a=>`<div class="item"><span class="av">${esc(initials(a.email))}</span>
+    <div><b>${esc(a.email)}</b>${a.email===me?`<div class="note">You</div>`:""}</div>
+    ${a.email===me?"<span></span>":`<button class="btn quiet danger sm" data-deladmin="${esc(a.email)}" aria-label="Remove admin ${esc(a.email)}">${ic("trash")}</button>`}</div>`).join("")}</div>`;
+  }
   const isV=S.sub==="vol",list=isV?S.vols:S.people,det=isV?S.vd:S.pd;
-  return sub+`<div class="card"><h2>Add ${isV?"volunteer":"person to be visited"}</h2>
-  <label>Name</label><input id="an">
-  <div class="row"><div><label>Email</label><input id="ae" type="email"></div><div><label>Phone</label><input id="ap" type="tel"></div></div>
-  ${isV?"":`<label>Address</label><input id="aa">`}
-  <label>Comments</label><textarea id="ac"></textarea>
-  <p><button class="btn pri" id="addent">Add</button></p></div>
-  <div class="card"><h2>${isV?"Volunteers":"People to be visited"} (${list.length})</h2>
-  ${list.length?list.map(o=>{const p=det[o.id]||{};return `<div class="item"><div><b>${esc(o.name)}</b>
-  <div class="note">${[p.email,p.phone,p.address].filter(Boolean).map(esc).join(" · ")}</div>${p.comments?`<div class="note">${esc(p.comments)}</div>`:""}</div>
-  <button class="btn sm del" data-delent="${esc(o.id)}">Remove</button></div>`}).join(""):`<div class="empty">Nobody added yet.</div>`}</div>`;
+  return sub+`<div class="panel"><h2>${isV?"Add a volunteer":"Add a person to visit"}</h2>
+  <div class="field" style="margin-top:16px"><label for="an">Name</label><input id="an" autocomplete="off"></div>
+  <div class="row field"><div><label for="ae">Email</label><input id="ae" type="email" inputmode="email"></div><div><label for="ap">Phone</label><input id="ap" type="tel"></div></div>
+  ${isV?"":`<div class="field"><label for="aa">Address</label><input id="aa" autocomplete="off"></div>`}
+  <div class="field"><label for="ac">Comments</label><textarea id="ac"></textarea></div>
+  <div class="actions"><button class="btn pri" id="addent">${isV?"Add volunteer":"Add person"}</button></div></div>
+  <div class="panel flush"><div class="panel-h"><h2>${isV?"Volunteers":"People to visit"} (${list.length})</h2></div>
+  ${list.length?list.map(o=>{const p=det[o.id]||{},contact=[p.email,p.phone].filter(Boolean).map(esc).join(", ");return `<div class="item"><span class="av">${esc(initials(o.name))}</span>
+  <div><b>${esc(o.name)}</b>${contact?`<div class="note">${contact}</div>`:""}${p.address?`<div class="note">${esc(p.address)}</div>`:""}${p.comments?`<div class="note">${esc(p.comments)}</div>`:""}</div>
+  <button class="btn quiet danger sm" data-delent="${esc(o.id)}" aria-label="Remove ${esc(o.name)}">${ic("trash")}</button></div>`}).join(""):`<div class="empty">${isV?"No volunteers yet. Add the first one above.":"No one to visit yet. Add the first person above."}</div>`}</div>`;
 }
 
 document.addEventListener("click",async e=>{
   const a=e.target.closest("a");
   if(a&&a.id==="gologin"){e.preventDefault();S.tab="login";return render()}
   if(a&&a.id==="signout"){e.preventDefault();await sb.auth.signOut();return}
-  if(a&&a.id==="lock"){e.preventDefault();S.pass="";store("");S.unlocked=false;S.msg=null;return load()}
+  if(a&&a.id==="lock"){e.preventDefault();S.pass="";store("");S.unlocked=false;return load()}
   const t=e.target.closest("button");if(!t)return;
   if(t.id==="cancellogin"){S.tab="dash";return render()}
-  if(t.dataset.t){S.tab=t.dataset.t;S.msg=null;return render()}
-  if(t.dataset.sub){S.sub=t.dataset.sub;S.msg=null;return render()}
+  if(t.id==="clearf"){S.fv="";S.fp="";return render()}
+  if(t.dataset.t){S.tab=t.dataset.t;return render()}
+  if(t.dataset.sub){S.sub=t.dataset.sub;return render()}
   try{
     let r;
     if(t.id==="sendlink"){
-      const email=val("le").trim().toLowerCase();if(!email)return flash("Enter your email.",true);
+      const email=val("le").trim().toLowerCase();if(!email)return toast("Enter your email address.",true);
       r=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});
-      if(r.error)throw r.error;return flash("Check your email for the sign-in link.");
+      if(r.error)throw r.error;return toast("Check your email for the sign-in link.");
     }
     if(t.id==="unlock"){
-      const pw=val("pw");if(!pw)return flash("Enter the passcode.",true);
+      const pw=val("pw");if(!pw)return toast("Enter the passcode.",true);
       r=await sb.rpc("get_lists",{p:pw});
-      if(r.error)return flash(/Incorrect passcode/i.test(r.error.message||"")?"That passcode isn’t right.":"Sorry, that didn’t work: "+r.error.message,true);
-      S.pass=pw;store(pw);S.msg=null;return load();
+      if(r.error)return toast(/Incorrect passcode/i.test(r.error.message||"")?"That passcode isn’t right. Check it and try again.":"Couldn’t unlock: "+r.error.message,true);
+      S.pass=pw;store(pw);return load();
     }
     if(t.id==="savevisit"){
       const v=S.vols.find(x=>x.id===val("sv")),p=S.people.find(x=>x.id===val("sp")),d=val("sd");
-      if(!v||!p||!d)return flash("Please choose a volunteer, a person and a date.",true);
+      if(!v||!p||!d)return toast("Choose a volunteer, a person and a date.",true);
       r=await sb.rpc("submit_visit",{p:S.pass||"",v_id:v.id,pe_id:p.id,d,c:val("sc").trim()});
       if(r.error)throw r.error;
-      S.tab="dash";S.msg=null;await load();flash("Visit saved. Thank you for serving!");
+      S.tab="dash";await load();toast("Saved. Thank you for serving.");
     }else if(t.id==="setpw"){
-      const pw=val("npw").trim();if(pw.length<4)return flash("The passcode must be at least 4 characters.",true);
+      const pw=val("npw").trim();if(pw.length<4)return toast("The passcode needs at least 4 characters.",true);
       r=await sb.rpc("set_passcode",{p:pw});if(r.error)throw r.error;
-      await load();flash("Passcode saved. Share it with your volunteers.");
+      await load();toast("Passcode saved. Share it with your volunteers.");
     }else if(t.id==="addent"){
-      const name=val("an").trim();if(!name)return flash("Name is required.",true);
+      const name=val("an").trim();if(!name)return toast("Enter a name.",true);
       const isV=S.sub==="vol";
       r=await sb.from(isV?"volunteers":"people").insert({name}).select("id").single();
       if(r.error)throw r.error;
@@ -200,25 +339,26 @@ document.addEventListener("click",async e=>{
       Object.assign(d,{email:val("ae").trim(),phone:val("ap").trim(),comments:val("ac").trim()});
       r=await sb.from(isV?"volunteer_details":"person_details").insert(d);
       if(r.error)throw r.error;
-      await load();flash("Added "+name+".");
+      await load();toast(name+" added.");
     }else if(t.dataset.delent){
-      if(!confirm("Remove this entry? Past visits are kept."))return;
-      r=await sb.from(S.sub==="vol"?"volunteers":"people").delete().eq("id",t.dataset.delent);
-      if(r.error)throw r.error;await load();
+      const isV=S.sub==="vol",who=(isV?S.vols:S.people).find(x=>x.id===t.dataset.delent);
+      if(!await ask("Remove "+(who?who.name:"this entry")+"?","Their past visits stay on the dashboard.","Remove",true))return;
+      r=await sb.from(isV?"volunteers":"people").delete().eq("id",t.dataset.delent);
+      if(r.error)throw r.error;await load();toast("Removed.");
     }else if(t.dataset.delvisit){
-      if(!confirm("Delete this visit record?"))return;
+      if(!await ask("Delete this visit?","The record is removed for everyone.","Delete visit",true))return;
       r=await sb.from("visits").delete().eq("id",t.dataset.delvisit);
-      if(r.error)throw r.error;await load();
+      if(r.error)throw r.error;await load();toast("Visit deleted.");
     }else if(t.id==="addadmin"){
-      const email=val("nae").trim().toLowerCase();if(!email)return flash("Enter an email.",true);
+      const email=val("nae").trim().toLowerCase();if(!email)return toast("Enter an email address.",true);
       r=await sb.from("admins").insert({email});if(r.error)throw r.error;
-      await load();flash(email+" is now an admin.");
+      await load();toast(email+" is now an admin.");
     }else if(t.dataset.deladmin){
-      if(!confirm("Remove admin access for "+t.dataset.deladmin+"?"))return;
+      if(!await ask("Remove admin access?",t.dataset.deladmin+" will no longer be able to manage the ministry.","Remove admin",true))return;
       r=await sb.from("admins").delete().eq("email",t.dataset.deladmin);
-      if(r.error)throw r.error;await load();
+      if(r.error)throw r.error;await load();toast("Admin removed.");
     }
-  }catch(err){flash("Sorry, that didn’t work: "+(err.message||"unknown error"),true)}
+  }catch(err){toast("That didn’t work: "+(err.message||"unknown error")+". Check your connection and try again.",true)}
 });
 document.addEventListener("change",e=>{
   if(e.target.id==="fv"){S.fv=e.target.value;render()}
