@@ -54,49 +54,72 @@ const SUPABASE_KEY = "sb_publishable_lbCQ1Z9NYII6EcjL4yxPsg_hMKC9uJI";   // publ
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const val=id=>document.getElementById(id).value;
-const S={tab:"sched",sub:"vol",user:null,admin:false,vols:[],people:[],vd:{},pd:{},visits:[],admins:[],fv:"",fp:"",msg:null};
+const PW_KEY="mymm_passcode";
+const store=v=>{try{v?localStorage.setItem(PW_KEY,v):localStorage.removeItem(PW_KEY)}catch(e){}};
+const stored=()=>{try{return localStorage.getItem(PW_KEY)||""}catch(e){return ""}};
+const S={tab:"dash",sub:"vol",user:null,admin:false,unlocked:false,pass:stored(),pwSet:false,vols:[],people:[],vd:{},pd:{},visits:[],admins:[],fv:"",fp:"",msg:null};
 
+function todayLocal(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function fmtDate(d){const x=new Date(d+"T12:00:00");return isNaN(x)?{m:"",d:d}:{m:x.toLocaleString("en-US",{month:"short"}),d:x.getDate()+", "+x.getFullYear()}}
 function flash(t,err){S.msg={t,err};render();if(!err)setTimeout(()=>{if(S.msg&&S.msg.t===t){S.msg=null;render()}},4000)}
 
 async function load(){
-  const [v,p]=await Promise.all([sb.from("volunteers").select("id,name").order("name"),sb.from("people").select("id,name").order("name")]);
-  S.vols=v.data||[];S.people=p.data||[];
-  S.admin=false;S.admins=[];
+  let admin=false,admins=[],unlocked=false,vols=[],people=[],visits=[],vd={},pd={},pwSet=false,msg=S.msg;
   if(S.user){
     const a=await sb.from("admins").select("email").order("email");
-    S.admins=a.data||[];S.admin=S.admins.length>0;
+    admins=a.data||[];admin=admins.length>0;
   }
-  if(S.admin){
-    const [vd,pd,vis]=await Promise.all([sb.from("volunteer_details").select("*"),sb.from("person_details").select("*"),sb.from("visits").select("*").order("visit_date",{ascending:false}).limit(500)]);
-    S.vd={};(vd.data||[]).forEach(r=>S.vd[r.volunteer_id]=r);
-    S.pd={};(pd.data||[]).forEach(r=>S.pd[r.person_id]=r);
-    S.visits=vis.data||[];
+  if(admin){
+    const [v,p,vdr,pdr,vis,pw]=await Promise.all([
+      sb.from("volunteers").select("id,name").order("name"),
+      sb.from("people").select("id,name").order("name"),
+      sb.from("volunteer_details").select("*"),
+      sb.from("person_details").select("*"),
+      sb.from("visits").select("*").order("visit_date",{ascending:false}).limit(500),
+      sb.rpc("passcode_is_set")]);
+    vols=v.data||[];people=p.data||[];visits=vis.data||[];pwSet=pw.data===true;
+    (vdr.data||[]).forEach(r=>vd[r.volunteer_id]=r);
+    (pdr.data||[]).forEach(r=>pd[r.person_id]=r);
+  }else if(S.pass){
+    const [l,vis]=await Promise.all([sb.rpc("get_lists",{p:S.pass}),sb.rpc("get_visits",{p:S.pass})]);
+    if(l.error||vis.error){
+      const bad=/Incorrect passcode/i.test((l.error||vis.error).message||"");
+      if(bad){S.pass="";store("");msg={t:"Please enter the passcode again.",err:true}}
+    }else{
+      unlocked=true;vols=(l.data&&l.data.volunteers)||[];people=(l.data&&l.data.people)||[];visits=vis.data||[];
+    }
   }
+  Object.assign(S,{admin,admins,unlocked,vols,people,visits,vd,pd,pwSet,msg});
   render();
 }
 
 function render(){
-  const tabs=[["sched","Schedule a visit"]];
-  if(S.admin)tabs.push(["dash","Dashboard"],["admin","Admin"]);
-  if(!tabs.some(t=>t[0]===S.tab)&&S.tab!=="login")S.tab="sched";
+  const locked=!S.admin&&!S.unlocked;
+  const tabs=[];
+  if(!locked){tabs.push(["dash","Dashboard"],["sched","Schedule a visit"]);if(S.admin)tabs.push(["admin","Admin"])}
+  if(S.tab!=="login"&&!locked&&!tabs.some(t=>t[0]===S.tab))S.tab="dash";
   document.getElementById("nav").innerHTML=tabs.map(([k,l])=>`<button data-t="${k}" class="${S.tab===k?"on":""}">${l}</button>`).join("");
   document.getElementById("status").innerHTML=S.msg?`<div class="msg ${S.msg.err?"err":""}">${esc(S.msg.t)}</div>`:(S.user&&!S.admin?`<div class="msg">Signed in as ${esc(S.user.email)}, but this email is not an admin.</div>`:"");
-  document.getElementById("foot").innerHTML=S.user?`${esc(S.user.email)} · <a href="#" id="signout">Sign out</a>`:`<a href="#" id="gologin">Admin sign in</a>`;
-  document.getElementById("main").innerHTML=S.tab==="sched"?sched():S.tab==="dash"?dash():S.tab==="admin"?admin():login();
+  const parts=[];
+  if(S.user)parts.push(`${esc(S.user.email)} · <a href="#" id="signout">Sign out</a>`);else parts.push(`<a href="#" id="gologin">Admin sign in</a>`);
+  if(S.unlocked&&!S.admin)parts.push(`<a href="#" id="lock">Lock this device</a>`);
+  document.getElementById("foot").innerHTML=parts.join(" · ");
+  document.getElementById("main").innerHTML=S.tab==="login"?login():locked?unlock():S.tab==="sched"?sched():S.tab==="dash"?dash():admin();
 }
 
 function login(){return `<div class="card"><h2>Admin sign in</h2><p class="note">Enter your admin email and we’ll send you a one-time sign-in link.</p>
-<label>Email</label><input id="le" type="email" autocomplete="email"><p><button class="btn pri" id="sendlink">Send link</button></p></div>`}
+<label>Email</label><input id="le" type="email" autocomplete="email"><p><button class="btn pri" id="sendlink">Send link</button> <button class="btn" id="cancellogin">Cancel</button></p></div>`}
+
+function unlock(){return `<div class="card"><h2>Volunteer access</h2><p class="note">Enter the ministry passcode to see recent visits and schedule a visit. If you don’t have it, ask a ministry leader.</p>
+<label>Passcode</label><input id="pw" type="password" autocomplete="current-password"><p><button class="btn pri" id="unlock">Unlock</button></p></div>`}
 
 function sched(){
-  const today=new Date().toISOString().slice(0,10);
   const opt=a=>`<option value="">Choose…</option>`+a.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join("");
   return `<div class="card"><h2>Set up a new visit</h2>
   ${!S.vols.length||!S.people.length?`<div class="msg">An admin needs to add at least one volunteer and one person to be visited first.</div>`:""}
   <label>Volunteer</label><select id="sv">${opt(S.vols)}</select>
   <label>Person to be visited</label><select id="sp">${opt(S.people)}</select>
-  <label>Date</label><input type="date" id="sd" value="${today}">
+  <label>Date</label><input type="date" id="sd" value="${todayLocal()}">
   <label>Comments</label><textarea id="sc" maxlength="1000" placeholder="Anything to note about this visit…"></textarea>
   <p><button class="btn pri" id="savevisit">Save visit</button></p></div>`;
 }
@@ -111,11 +134,14 @@ function dash(){
   <div><label>Person visited</label><select id="fp">${opt(S.people,S.fp)}</select></div></div>
   <div style="margin-top:12px">${v.length?v.map(x=>{const d=fmtDate(x.visit_date);return `<div class="visit"><div class="date">${esc(d.m)}<br>${esc(d.d)}</div>
   <div class="meta"><b>${esc(x.volunteer_name)}</b> visited <b>${esc(x.person_name)}</b>${x.comment?`<div class="note">${esc(x.comment)}</div>`:""}</div>
-  <button class="btn sm del" data-delvisit="${esc(x.id)}">Delete</button></div>`}).join(""):`<div class="empty">No visits to show yet.</div>`}</div></div>`;
+  ${S.admin?`<button class="btn sm del" data-delvisit="${esc(x.id)}">Delete</button>`:""}</div>`}).join(""):`<div class="empty">No visits to show yet.</div>`}</div></div>`;
 }
 
 function admin(){
-  const sub=`<div class="sub">${[["vol","Volunteers"],["per","People to visit"],["adm","Admins"]].map(([k,l])=>`<button class="btn sm ${S.sub===k?"pri":""}" data-sub="${k}">${l}</button>`).join("")}</div>`;
+  const sub=`<div class="sub">${[["vol","Volunteers"],["per","People to visit"],["adm","Admins"],["pw","Passcode"]].map(([k,l])=>`<button class="btn sm ${S.sub===k?"pri":""}" data-sub="${k}">${l}</button>`).join("")}</div>`;
+  if(S.sub==="pw")return sub+`<div class="card"><h2>Volunteer passcode</h2>
+  <p class="note">Volunteers enter this passcode to see recent visits and schedule new ones. ${S.pwSet?"A passcode is currently set.":"<b>No passcode is set yet, so only admins can use the site.</b>"} Changing it asks volunteers to enter the new one.</p>
+  <label>New passcode (at least 4 characters)</label><input id="npw" type="text" autocomplete="off"><p><button class="btn pri" id="setpw">Save passcode</button></p></div>`;
   if(S.sub==="adm")return sub+`<div class="card"><h2>Add an admin</h2><p class="note">They sign in with this email using a one-time link.</p>
   <label>Email</label><input id="nae" type="email"><p><button class="btn pri" id="addadmin">Add admin</button></p></div>
   <div class="card"><h2>Admins (${S.admins.length})</h2>${S.admins.map(a=>`<div class="item"><div>${esc(a.email)}${a.email===(S.user.email||"").toLowerCase()?` <span class="note">(you)</span>`:""}</div>
@@ -137,7 +163,9 @@ document.addEventListener("click",async e=>{
   const a=e.target.closest("a");
   if(a&&a.id==="gologin"){e.preventDefault();S.tab="login";return render()}
   if(a&&a.id==="signout"){e.preventDefault();await sb.auth.signOut();return}
+  if(a&&a.id==="lock"){e.preventDefault();S.pass="";store("");S.unlocked=false;S.msg=null;return load()}
   const t=e.target.closest("button");if(!t)return;
+  if(t.id==="cancellogin"){S.tab="dash";return render()}
   if(t.dataset.t){S.tab=t.dataset.t;S.msg=null;return render()}
   if(t.dataset.sub){S.sub=t.dataset.sub;S.msg=null;return render()}
   try{
@@ -147,12 +175,22 @@ document.addEventListener("click",async e=>{
       r=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});
       if(r.error)throw r.error;return flash("Check your email for the sign-in link.");
     }
+    if(t.id==="unlock"){
+      const pw=val("pw");if(!pw)return flash("Enter the passcode.",true);
+      r=await sb.rpc("get_lists",{p:pw});
+      if(r.error)return flash(/Incorrect passcode/i.test(r.error.message||"")?"That passcode isn’t right.":"Sorry, that didn’t work: "+r.error.message,true);
+      S.pass=pw;store(pw);S.msg=null;return load();
+    }
     if(t.id==="savevisit"){
       const v=S.vols.find(x=>x.id===val("sv")),p=S.people.find(x=>x.id===val("sp")),d=val("sd");
       if(!v||!p||!d)return flash("Please choose a volunteer, a person and a date.",true);
-      r=await sb.from("visits").insert({volunteer_id:v.id,volunteer_name:v.name,person_id:p.id,person_name:p.name,visit_date:d,comment:val("sc").trim()||null});
+      r=await sb.rpc("submit_visit",{p:S.pass||"",v_id:v.id,pe_id:p.id,d,c:val("sc").trim()});
       if(r.error)throw r.error;
-      flash("Visit saved. Thank you for serving!");if(S.admin)await load();
+      S.tab="dash";S.msg=null;await load();flash("Visit saved. Thank you for serving!");
+    }else if(t.id==="setpw"){
+      const pw=val("npw").trim();if(pw.length<4)return flash("The passcode must be at least 4 characters.",true);
+      r=await sb.rpc("set_passcode",{p:pw});if(r.error)throw r.error;
+      await load();flash("Passcode saved. Share it with your volunteers.");
     }else if(t.id==="addent"){
       const name=val("an").trim();if(!name)return flash("Name is required.",true);
       const isV=S.sub==="vol";
@@ -186,6 +224,11 @@ document.addEventListener("change",e=>{
   if(e.target.id==="fv"){S.fv=e.target.value;render()}
   if(e.target.id==="fp"){S.fp=e.target.value;render()}
 });
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Enter")return;
+  if(e.target.id==="pw"){e.preventDefault();document.getElementById("unlock").click()}
+  if(e.target.id==="le"){e.preventDefault();document.getElementById("sendlink").click()}
+});
 
 sb.auth.onAuthStateChange((_ev,session)=>{
   S.user=session?session.user:null;
@@ -195,5 +238,4 @@ sb.auth.onAuthStateChange((_ev,session)=>{
 render();
 </script>
 </body>
-
 </html>
