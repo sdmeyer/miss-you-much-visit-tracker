@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Miss You Much Ministry</title>
+<style>
+:root{--bg:#faf6f0;--card:#fff;--ink:#2b2a33;--mute:#6d6a75;--line:#e6dfd3;--acc:#8a3b4f;--acc-ink:#fff;--soft:#f3e7e9;--err:#b3261e}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#1d1b20;--card:#27242b;--ink:#efeaf0;--mute:#a6a1ad;--line:#3a3640;--acc:#e08aa0;--acc-ink:#2a1219;--soft:#3a2830;--err:#ff8a80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Georgia,"Times New Roman",serif}
+.wrap{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+header{text-align:center;padding:12px 0 8px}
+h1{font-size:1.9rem;margin:0;color:var(--acc)}
+.tag{color:var(--mute);margin:4px 0 0;font-style:italic}
+nav{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:18px 0}
+nav button,.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 16px;border-radius:999px;cursor:pointer}
+nav button.on,.btn.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+.btn.sm{padding:4px 12px;font-size:.85rem}.btn.del{color:var(--err)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+h2{margin:0 0 12px;font-size:1.25rem}
+label{display:block;font-size:.9rem;color:var(--mute);margin:10px 0 3px}
+input,select,textarea{width:100%;font:inherit;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+textarea{min-height:80px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.row{grid-template-columns:1fr}}
+.filters{display:flex;gap:10px;flex-wrap:wrap}.filters>div{flex:1;min-width:180px}
+.visit,.item{border-top:1px solid var(--line);padding:12px 0;display:flex;gap:12px;justify-content:space-between;align-items:flex-start}
+.visit:first-of-type,.item:first-of-type{border-top:0}
+.date{background:var(--soft);color:var(--acc);border-radius:10px;padding:6px 10px;text-align:center;min-width:64px;font-size:.85rem;font-weight:bold}
+.meta{flex:1}.meta b{color:var(--acc)}
+.note{color:var(--mute);font-size:.92rem;margin-top:3px}
+.empty{color:var(--mute);text-align:center;padding:18px}
+.msg{padding:10px 12px;border-radius:8px;background:var(--soft);margin:10px 0}.msg.err{color:var(--err)}
+.sub{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.foot{text-align:center;margin-top:24px;font-size:.9rem;color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>💌 Miss You Much Ministry</h1><p class="tag">Home visits for those who can’t make it to church</p></header>
+<nav id="nav"></nav>
+<div id="status"></div>
+<main id="main"></main>
+<div class="foot" id="foot"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// ===== CONFIG: paste from Supabase > Project Settings > API =====
+const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+const SUPABASE_KEY = "sb_publishable_YOUR-KEY";   // publishable key only, never a secret key or service_role
+// =================================================================
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const val=id=>document.getElementById(id).value;
+const S={tab:"sched",sub:"vol",user:null,admin:false,vols:[],people:[],vd:{},pd:{},visits:[],admins:[],fv:"",fp:"",msg:null};
+
+function fmtDate(d){const x=new Date(d+"T12:00:00");return isNaN(x)?{m:"",d:d}:{m:x.toLocaleString("en-US",{month:"short"}),d:x.getDate()+", "+x.getFullYear()}}
+function flash(t,err){S.msg={t,err};render();if(!err)setTimeout(()=>{if(S.msg&&S.msg.t===t){S.msg=null;render()}},4000)}
+
+async function load(){
+  const [v,p]=await Promise.all([sb.from("volunteers").select("id,name").order("name"),sb.from("people").select("id,name").order("name")]);
+  S.vols=v.data||[];S.people=p.data||[];
+  S.admin=false;S.admins=[];
+  if(S.user){
+    const a=await sb.from("admins").select("email").order("email");
+    S.admins=a.data||[];S.admin=S.admins.length>0;
+  }
+  if(S.admin){
+    const [vd,pd,vis]=await Promise.all([sb.from("volunteer_details").select("*"),sb.from("person_details").select("*"),sb.from("visits").select("*").order("visit_date",{ascending:false}).limit(500)]);
+    S.vd={};(vd.data||[]).forEach(r=>S.vd[r.volunteer_id]=r);
+    S.pd={};(pd.data||[]).forEach(r=>S.pd[r.person_id]=r);
+    S.visits=vis.data||[];
+  }
+  render();
+}
+
+function render(){
+  const tabs=[["sched","Schedule a visit"]];
+  if(S.admin)tabs.push(["dash","Dashboard"],["admin","Admin"]);
+  if(!tabs.some(t=>t[0]===S.tab)&&S.tab!=="login")S.tab="sched";
+  document.getElementById("nav").innerHTML=tabs.map(([k,l])=>`<button data-t="${k}" class="${S.tab===k?"on":""}">${l}</button>`).join("");
+  document.getElementById("status").innerHTML=S.msg?`<div class="msg ${S.msg.err?"err":""}">${esc(S.msg.t)}</div>`:(S.user&&!S.admin?`<div class="msg">Signed in as ${esc(S.user.email)}, but this email is not an admin.</div>`:"");
+  document.getElementById("foot").innerHTML=S.user?`${esc(S.user.email)} · <a href="#" id="signout">Sign out</a>`:`<a href="#" id="gologin">Admin sign in</a>`;
+  document.getElementById("main").innerHTML=S.tab==="sched"?sched():S.tab==="dash"?dash():S.tab==="admin"?admin():login();
+}
+
+function login(){return `<div class="card"><h2>Admin sign in</h2><p class="note">Enter your admin email and we’ll send you a one-time sign-in link.</p>
+<label>Email</label><input id="le" type="email" autocomplete="email"><p><button class="btn pri" id="sendlink">Send link</button></p></div>`}
+
+function sched(){
+  const today=new Date().toISOString().slice(0,10);
+  const opt=a=>`<option value="">Choose…</option>`+a.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join("");
+  return `<div class="card"><h2>Set up a new visit</h2>
+  ${!S.vols.length||!S.people.length?`<div class="msg">An admin needs to add at least one volunteer and one person to be visited first.</div>`:""}
+  <label>Volunteer</label><select id="sv">${opt(S.vols)}</select>
+  <label>Person to be visited</label><select id="sp">${opt(S.people)}</select>
+  <label>Date</label><input type="date" id="sd" value="${today}">
+  <label>Comments</label><textarea id="sc" maxlength="1000" placeholder="Anything to note about this visit…"></textarea>
+  <p><button class="btn pri" id="savevisit">Save visit</button></p></div>`;
+}
+
+function dash(){
+  let v=S.visits;
+  if(S.fv)v=v.filter(x=>x.volunteer_id===S.fv);
+  if(S.fp)v=v.filter(x=>x.person_id===S.fp);
+  const opt=(arr,sel)=>`<option value="">All</option>`+arr.map(o=>`<option value="${esc(o.id)}" ${o.id===sel?"selected":""}>${esc(o.name)}</option>`).join("");
+  return `<div class="card"><h2>Recent visits</h2>
+  <div class="filters"><div><label>Volunteer</label><select id="fv">${opt(S.vols,S.fv)}</select></div>
+  <div><label>Person visited</label><select id="fp">${opt(S.people,S.fp)}</select></div></div>
+  <div style="margin-top:12px">${v.length?v.map(x=>{const d=fmtDate(x.visit_date);return `<div class="visit"><div class="date">${esc(d.m)}<br>${esc(d.d)}</div>
+  <div class="meta"><b>${esc(x.volunteer_name)}</b> visited <b>${esc(x.person_name)}</b>${x.comment?`<div class="note">${esc(x.comment)}</div>`:""}</div>
+  <button class="btn sm del" data-delvisit="${esc(x.id)}">Delete</button></div>`}).join(""):`<div class="empty">No visits to show yet.</div>`}</div></div>`;
+}
+
+function admin(){
+  const sub=`<div class="sub">${[["vol","Volunteers"],["per","People to visit"],["adm","Admins"]].map(([k,l])=>`<button class="btn sm ${S.sub===k?"pri":""}" data-sub="${k}">${l}</button>`).join("")}</div>`;
+  if(S.sub==="adm")return sub+`<div class="card"><h2>Add an admin</h2><p class="note">They sign in with this email using a one-time link.</p>
+  <label>Email</label><input id="nae" type="email"><p><button class="btn pri" id="addadmin">Add admin</button></p></div>
+  <div class="card"><h2>Admins (${S.admins.length})</h2>${S.admins.map(a=>`<div class="item"><div>${esc(a.email)}${a.email===(S.user.email||"").toLowerCase()?` <span class="note">(you)</span>`:""}</div>
+  ${a.email===(S.user.email||"").toLowerCase()?"":`<button class="btn sm del" data-deladmin="${esc(a.email)}">Remove</button>`}</div>`).join("")}</div>`;
+  const isV=S.sub==="vol",list=isV?S.vols:S.people,det=isV?S.vd:S.pd;
+  return sub+`<div class="card"><h2>Add ${isV?"volunteer":"person to be visited"}</h2>
+  <label>Name</label><input id="an">
+  <div class="row"><div><label>Email</label><input id="ae" type="email"></div><div><label>Phone</label><input id="ap" type="tel"></div></div>
+  ${isV?"":`<label>Address</label><input id="aa">`}
+  <label>Comments</label><textarea id="ac"></textarea>
+  <p><button class="btn pri" id="addent">Add</button></p></div>
+  <div class="card"><h2>${isV?"Volunteers":"People to be visited"} (${list.length})</h2>
+  ${list.length?list.map(o=>{const p=det[o.id]||{};return `<div class="item"><div><b>${esc(o.name)}</b>
+  <div class="note">${[p.email,p.phone,p.address].filter(Boolean).map(esc).join(" · ")}</div>${p.comments?`<div class="note">${esc(p.comments)}</div>`:""}</div>
+  <button class="btn sm del" data-delent="${esc(o.id)}">Remove</button></div>`}).join(""):`<div class="empty">Nobody added yet.</div>`}</div>`;
+}
+
+document.addEventListener("click",async e=>{
+  const a=e.target.closest("a");
+  if(a&&a.id==="gologin"){e.preventDefault();S.tab="login";return render()}
+  if(a&&a.id==="signout"){e.preventDefault();await sb.auth.signOut();return}
+  const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.t){S.tab=t.dataset.t;S.msg=null;return render()}
+  if(t.dataset.sub){S.sub=t.dataset.sub;S.msg=null;return render()}
+  try{
+    let r;
+    if(t.id==="sendlink"){
+      const email=val("le").trim().toLowerCase();if(!email)return flash("Enter your email.",true);
+      r=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});
+      if(r.error)throw r.error;return flash("Check your email for the sign-in link.");
+    }
+    if(t.id==="savevisit"){
+      const v=S.vols.find(x=>x.id===val("sv")),p=S.people.find(x=>x.id===val("sp")),d=val("sd");
+      if(!v||!p||!d)return flash("Please choose a volunteer, a person and a date.",true);
+      r=await sb.from("visits").insert({volunteer_id:v.id,volunteer_name:v.name,person_id:p.id,person_name:p.name,visit_date:d,comment:val("sc").trim()||null});
+      if(r.error)throw r.error;
+      flash("Visit saved. Thank you for serving!");if(S.admin)await load();
+    }else if(t.id==="addent"){
+      const name=val("an").trim();if(!name)return flash("Name is required.",true);
+      const isV=S.sub==="vol";
+      r=await sb.from(isV?"volunteers":"people").insert({name}).select("id").single();
+      if(r.error)throw r.error;
+      const d=isV?{volunteer_id:r.data.id}:{person_id:r.data.id,address:val("aa").trim()};
+      Object.assign(d,{email:val("ae").trim(),phone:val("ap").trim(),comments:val("ac").trim()});
+      r=await sb.from(isV?"volunteer_details":"person_details").insert(d);
+      if(r.error)throw r.error;
+      await load();flash("Added "+name+".");
+    }else if(t.dataset.delent){
+      if(!confirm("Remove this entry? Past visits are kept."))return;
+      r=await sb.from(S.sub==="vol"?"volunteers":"people").delete().eq("id",t.dataset.delent);
+      if(r.error)throw r.error;await load();
+    }else if(t.dataset.delvisit){
+      if(!confirm("Delete this visit record?"))return;
+      r=await sb.from("visits").delete().eq("id",t.dataset.delvisit);
+      if(r.error)throw r.error;await load();
+    }else if(t.id==="addadmin"){
+      const email=val("nae").trim().toLowerCase();if(!email)return flash("Enter an email.",true);
+      r=await sb.from("admins").insert({email});if(r.error)throw r.error;
+      await load();flash(email+" is now an admin.");
+    }else if(t.dataset.deladmin){
+      if(!confirm("Remove admin access for "+t.dataset.deladmin+"?"))return;
+      r=await sb.from("admins").delete().eq("email",t.dataset.deladmin);
+      if(r.error)throw r.error;await load();
+    }
+  }catch(err){flash("Sorry, that didn’t work: "+(err.message||"unknown error"),true)}
+});
+document.addEventListener("change",e=>{
+  if(e.target.id==="fv"){S.fv=e.target.value;render()}
+  if(e.target.id==="fp"){S.fp=e.target.value;render()}
+});
+
+sb.auth.onAuthStateChange((_ev,session)=>{
+  S.user=session?session.user:null;
+  if(S.user&&S.tab==="login")S.tab="dash";
+  setTimeout(load,0);
+});
+render();
+</script>
+</body>
+</html>
