@@ -77,4 +77,4 @@ create policy visits_insert on visits for insert with check (true);
 create policy visits_admin on visits for all using (is_admin()) with check (is_admin());
 
 -- First admin ---------------------------------------------------------------
-insert into admins (email) values (lower('YOUR_EMAIL@example.com')) on conflict do nothing;
+insert into admins (email) values (lower('seneca.meyer@gmail.com')) on conflict do nothing;

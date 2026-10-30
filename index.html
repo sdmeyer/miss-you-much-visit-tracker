@@ -47,8 +47,8 @@ textarea{min-height:80px;resize:vertical}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // ===== CONFIG: paste from Supabase > Project Settings > API =====
-const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
-const SUPABASE_KEY = "sb_publishable_YOUR-KEY";   // publishable key only, never a secret key or service_role
+const SUPABASE_URL = "https://mevdcxltwbssatzspdlj.supabase.co";
+const SUPABASE_KEY = "sb_publishable_lbCQ1Z9NYII6EcjL4yxPsg_hMKC9uJI";   // publishable key only, never a secret key or service_role
 // =================================================================
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -195,4 +195,5 @@ sb.auth.onAuthStateChange((_ev,session)=>{
 render();
 </script>
 </body>
+
 </html>
