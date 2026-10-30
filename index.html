@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#fbfdfd">
+<meta name="theme-color" content="#f3f5f6">
 <title>Miss You Much Ministry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#fbfdfd;--card:#fff;--ink:#1f2a2e;--mute:#62747a;--line:#e7eeee;--chip:#eef4f4;
-  --acc:#2c7a75;--acc-h:#23645f;--acc-ink:#fff;--tint:#e4f2f0;
-  --err:#b42318;--err-ink:#fff;--ring:rgba(44,122,117,.3);
+  --bg:#f3f5f6;--card:#fff;--ink:#252d31;--mute:#5f6b72;--line:#dde2e5;--chip:#e8ecee;
+  --acc:#007f87;--acc-h:#006a71;--acc-d:#005c63;--acc-ink:#fff;--tint:#e3f3f3;
+  --err:#b42318;--err-ink:#fff;--ring:rgba(0,127,135,.3);
   --sans:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root{color-scheme:dark;
-  --bg:#101a1c;--card:#172426;--ink:#e9f1f1;--mute:#9bb0b3;--line:#263a3d;--chip:#1f3033;
-  --acc:#7fcfc7;--acc-h:#9adbd4;--acc-ink:#0b1e1d;--tint:#1c3335;
-  --err:#ff9a90;--err-ink:#2b0d0a;--ring:rgba(127,207,199,.38)}}
+  --bg:#14191b;--card:#1c2326;--ink:#e8edef;--mute:#9aa6ac;--line:#2c3639;--chip:#232d30;
+  --acc:#3cc8c8;--acc-h:#66d8d8;--acc-d:#66d8d8;--acc-ink:#06191a;--tint:#1b3335;
+  --err:#ff9a90;--err-ink:#2b0d0a;--ring:rgba(60,200,200,.38)}}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.55 var(--sans)}
@@ -41,7 +41,7 @@ nav button.on{color:var(--acc);border-bottom-color:var(--acc)}
 @media(max-width:639px){
   nav{position:fixed;left:0;right:0;bottom:0;z-index:30;margin:0;gap:0;background:var(--card);border-top:1px solid var(--line);border-bottom:0;padding:4px 6px calc(4px + env(safe-area-inset-bottom))}
   nav button{flex:1;flex-direction:column;gap:2px;font-size:.78rem;border-bottom:0;border-radius:10px;padding:8px 4px;margin:0}
-  nav button.on{background:var(--tint)}
+  nav button.on{background:var(--tint);color:var(--acc-d)}
   header{padding-bottom:18px}
 }
 
@@ -86,7 +86,7 @@ input:focus,select:focus,textarea:focus{outline:3px solid var(--ring);border-col
 .visit{display:grid;grid-template-columns:62px 1fr auto;gap:16px;align-items:start;padding:16px 20px;border-top:1px solid var(--line)}
 .visit .who b,.item b{font-weight:800}
 .note{color:var(--mute);font-size:.95rem;margin-top:3px;overflow-wrap:anywhere}
-.dchip{width:58px;height:58px;border-radius:14px;background:var(--tint);color:var(--acc);display:grid;place-content:center;text-align:center;line-height:1}
+.dchip{width:58px;height:58px;border-radius:14px;background:var(--tint);color:var(--acc-d);display:grid;place-content:center;text-align:center;line-height:1}
 .dchip i{display:block;font-style:normal;font-weight:600;font-size:.78rem;margin-bottom:3px}
 .dchip b{display:block;font-weight:800;font-size:1.3rem}
 .empty{padding:34px 20px;text-align:center;color:var(--mute)}
@@ -94,7 +94,7 @@ input:focus,select:focus,textarea:focus{outline:3px solid var(--ring);border-col
 
 /* admin lists */
 .item{display:grid;grid-template-columns:44px 1fr auto;gap:14px;align-items:start;padding:14px 20px;border-top:1px solid var(--line)}
-.av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--tint);color:var(--acc);font-weight:800;font-size:.95rem}
+.av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--tint);color:var(--acc-d);font-weight:800;font-size:.95rem}
 .panel-h+.item,.panel-h+.empty{margin-top:12px}
 
 /* unlock and loading */
