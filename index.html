@@ -182,6 +182,8 @@ const hash=s=>{let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))>>>0;ret
 const initials=n=>String(n).trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase()||"?";
 const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const todayLocal=()=>ymd(new Date());
+const fmtPhone=s=>{const raw=String(s||"").trim(),d=raw.replace(/\D/g,""),n=d.length===11&&d[0]==="1"?d.slice(1):d;return n.length===10?n.slice(0,3)+"-"+n.slice(3,6)+"-"+n.slice(6):raw};
+const typePhone=s=>{if(/[a-z]/i.test(s))return s;let d=s.replace(/\D/g,"");if(d.length>10&&d[0]==="1")d=d.slice(1);d=d.slice(0,10);return d.length>6?d.slice(0,3)+"-"+d.slice(3,6)+"-"+d.slice(6):d.length>3?d.slice(0,3)+"-"+d.slice(3):d};
 const dparts=s=>{const x=new Date(s+"T12:00:00");return isNaN(x)?{mon:"",day:s,month:""}:{mon:x.toLocaleString("en-US",{month:"short"}),day:x.getDate(),month:x.toLocaleString("en-US",{month:"long",year:"numeric"})}};
 
 function toast(t,err){
@@ -327,7 +329,7 @@ function admin(){
   <div class="field"><label for="ac">Comments</label><textarea id="ac"></textarea></div>
   <div class="actions"><button class="btn pri" id="addent">${isV?"Add volunteer":"Add person"}</button></div></div>
   <div class="panel flush"><div class="panel-h"><h2>${isV?"Volunteers":"People to visit"} (${list.length})</h2></div>
-  ${list.length?list.map(o=>{const p=det[o.id]||{},contact=[p.email,p.phone].filter(Boolean).map(esc).join(", ");return `<div class="item"><span class="av">${esc(initials(o.name))}</span>
+  ${list.length?list.map(o=>{const p=det[o.id]||{},contact=[p.email,fmtPhone(p.phone)].filter(Boolean).map(esc).join(", ");return `<div class="item"><span class="av">${esc(initials(o.name))}</span>
   <div><b>${esc(o.name)}</b>${contact?`<div class="note">${contact}</div>`:""}${p.address?`<div class="note">${esc(p.address)}</div>`:""}${p.comments?`<div class="note">${esc(p.comments)}</div>`:""}</div>
   <button class="btn quiet danger sm" data-delent="${esc(o.id)}" aria-label="Remove ${esc(o.name)}">${ic("trash")}</button></div>`}).join(""):`<div class="empty">${isV?"No volunteers yet. Add the first one above.":"No one to visit yet. Add the first person above."}</div>`}</div>`;
 }
@@ -399,6 +401,9 @@ document.addEventListener("click",async e=>{
 document.addEventListener("change",e=>{
   if(e.target.id==="fv"){S.fv=e.target.value;render()}
   if(e.target.id==="fp"){S.fp=e.target.value;render()}
+});
+document.addEventListener("input",e=>{
+  if(e.target.id==="ap"){const v=typePhone(e.target.value);if(v!==e.target.value)e.target.value=v}
 });
 document.addEventListener("keydown",e=>{
   if(e.key!=="Enter")return;
