@@ -119,9 +119,12 @@ input:focus,select:focus,textarea:focus{outline:3px solid var(--ring);border-col
 .av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--chip);color:var(--ink);font-weight:800;font-size:.95rem}
 .panel-h+.item,.panel-h+.empty{margin-top:12px}
 .item.people{align-items:center;padding-top:12px;padding-bottom:12px}
-.item .acts{display:flex;gap:2px}
-.item.editing{display:block;background:var(--bg)}
-.item.editing h3{margin-bottom:14px}
+.item .acts,.visit .acts{display:flex;gap:2px}
+.item.editing,.visit.editing{display:block;background:var(--bg)}
+.item.editing h3,.visit.editing h3{margin-bottom:14px}
+.item.typ{grid-template-columns:1fr auto;align-items:center}
+.item .acts .btn,.visit .acts .btn{padding:4px 8px}
+.vtype{display:inline-block;margin:0 2px 2px 0;padding:1px 10px;border-radius:999px;background:var(--tint);color:var(--acc-d);font-weight:600;font-size:.88rem;line-height:1.5}
 
 /* unlock and loading */
 .lockrow{display:flex;gap:14px;align-items:flex-start}
@@ -170,7 +173,7 @@ const val=id=>document.getElementById(id).value;
 const PW_KEY="mymm_passcode";
 const store=v=>{try{v?localStorage.setItem(PW_KEY,v):localStorage.removeItem(PW_KEY)}catch(e){}};
 const stored=()=>{try{return localStorage.getItem(PW_KEY)||""}catch(e){return ""}};
-const S={loading:true,tab:"dash",sub:"vol",psub:"vol",editing:null,user:null,admin:false,unlocked:false,pass:stored(),pwSet:false,vols:[],people:[],vd:{},pd:{},visits:[],admins:[],fv:"",fp:""};
+const S={loading:true,tab:"dash",sub:"vol",psub:"vol",editing:null,editingVisit:null,types:[],user:null,admin:false,unlocked:false,pass:stored(),pwSet:false,vols:[],people:[],vd:{},pd:{},visits:[],admins:[],fv:"",fp:""};
 
 const IC={
   hist:'<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/>',
@@ -204,20 +207,21 @@ function ask(title,msg,ok,danger){
 }
 
 async function load(){
-  let admin=false,admins=[],unlocked=false,vols=[],people=[],visits=[],vd={},pd={},pwSet=false,note=null;
+  let admin=false,admins=[],unlocked=false,vols=[],people=[],visits=[],types=[],vd={},pd={},pwSet=false,note=null;
   if(S.user){
     const a=await sb.from("admins").select("email").order("email");
     admins=a.data||[];admin=admins.length>0;
   }
   if(admin){
-    const [v,p,vdr,pdr,vis,pw]=await Promise.all([
+    const [v,p,vdr,pdr,vis,pw,vt]=await Promise.all([
       sb.from("volunteers").select("id,name").order("name"),
       sb.from("people").select("id,name").order("name"),
       sb.from("volunteer_details").select("*"),
       sb.from("person_details").select("*"),
       sb.from("visits").select("*").order("visit_date",{ascending:false}).limit(500),
-      sb.rpc("passcode_is_set")]);
-    vols=v.data||[];people=p.data||[];visits=vis.data||[];pwSet=pw.data===true;
+      sb.rpc("passcode_is_set"),
+      sb.from("visit_types").select("id,name")]);
+    vols=v.data||[];people=p.data||[];visits=vis.data||[];pwSet=pw.data===true;types=vt.data||[];
     (vdr.data||[]).forEach(r=>vd[r.volunteer_id]=r);
     (pdr.data||[]).forEach(r=>pd[r.person_id]=r);
   }else if(S.pass){
@@ -225,10 +229,11 @@ async function load(){
     if(l.error||vis.error){
       if(/Incorrect passcode/i.test((l.error||vis.error).message||"")){S.pass="";store("");note="The passcode has changed. Enter the new one to continue."}
     }else{
-      unlocked=true;vols=(l.data&&l.data.volunteers)||[];people=(l.data&&l.data.people)||[];visits=vis.data||[];
+      unlocked=true;vols=(l.data&&l.data.volunteers)||[];people=(l.data&&l.data.people)||[];visits=vis.data||[];types=(l.data&&l.data.types)||[];
     }
   }
-  Object.assign(S,{loading:false,admin,admins,unlocked,vols,people,visits,vd,pd,pwSet});
+  types=[...types].sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:"base"}));
+  Object.assign(S,{loading:false,admin,admins,unlocked,vols,people,visits,types,vd,pd,pwSet});
   render();
   if(note)toast(note,true);
 }
@@ -274,9 +279,25 @@ function sched(){
   ${none?`<div class="banner" style="margin:14px 0 0">An admin needs to add at least one volunteer and one person to visit before you can connect.</div>`:""}
   <div class="field" style="margin-top:16px"><label for="sv">Volunteer</label><select id="sv">${opt(S.vols)}</select></div>
   <div class="field"><label for="sp">Person to visit</label><select id="sp">${opt(S.people)}</select></div>
+  ${S.types.length?`<div class="field"><label for="st">Sharing God’s love with</label><select id="st">${opt(S.types)}</select></div>`:""}
   <div class="field"><label for="sd">Date</label><input type="date" id="sd" value="${todayLocal()}"></div>
-  <div class="field"><label for="sc">This is for</label><textarea id="sc" maxlength="1000" placeholder="For example, a birthday visit, communion, or a ride to church"></textarea></div>
+  <div class="field"><label for="sc">Notes</label><textarea id="sc" maxlength="1000" placeholder="Anything worth remembering (optional)"></textarea></div>
   <div class="actions"><button class="btn pri" id="savevisit">Save</button></div></div>`;
+}
+
+// Admin editor for one visit. Keeps a removed volunteer, person or type selectable so saving never forces a change.
+const withCurrent=(list,id,name)=>(!id||list.some(o=>o.id===id))?list:[...list,{id,name:name||"Removed"}];
+function visitEditor(x){
+  const vols=withCurrent(S.vols,x.volunteer_id,x.volunteer_name),ppl=withCurrent(S.people,x.person_id,x.person_name);
+  const types=x.visit_type&&!S.types.some(t=>t.name===x.visit_type)?[...S.types,{id:x.visit_type,name:x.visit_type}]:S.types;
+  const opts=(a,sel,key)=>a.map(o=>{const v=key?o.name:o.id;return `<option value="${esc(v)}" ${v===sel?"selected":""}>${esc(o.name)}</option>`}).join("");
+  return `<div class="visit editing"><h3>Edit this visit</h3>
+  <div class="field" style="margin-top:0"><label for="evv">Volunteer</label><select id="evv">${opts(vols,x.volunteer_id)}</select></div>
+  <div class="field"><label for="evp">Person to visit</label><select id="evp">${opts(ppl,x.person_id)}</select></div>
+  ${types.length?`<div class="field"><label for="evt">Sharing God’s love with</label><select id="evt"><option value="">None</option>${opts(types,x.visit_type||"",true)}</select></div>`:""}
+  <div class="field"><label for="evd">Date</label><input type="date" id="evd" value="${esc(x.visit_date)}"></div>
+  <div class="field"><label for="evn">Notes</label><textarea id="evn" maxlength="1000">${esc(x.comment)}</textarea></div>
+  <div class="actions"><button class="btn pri" data-savevisit="${esc(x.id)}">Save changes</button><button class="btn quiet" id="canceledit">Cancel</button></div></div>`;
 }
 
 function stats(){
@@ -299,9 +320,11 @@ function dash(){
     let last="";
     body=v.map(x=>{
       const d=dparts(x.visit_date),head=d.month!==last?`<div class="month">${esc(d.month)}</div>`:"";last=d.month;
+      if(S.admin&&S.editingVisit===x.id)return head+visitEditor(x);
       return head+`<div class="visit"><div class="dchip" aria-hidden="true"><div><i>${esc(d.mon)}</i><b>${esc(d.day)}</b></div></div>
-      <div><div class="who"><b>${esc(x.volunteer_name)}</b> visited <b>${esc(x.person_name)}</b></div>${x.comment?`<div class="note">${esc(x.comment)}</div>`:""}</div>
-      ${S.admin?`<button class="btn quiet danger sm" data-delvisit="${esc(x.id)}" aria-label="Delete this visit">${ic("trash")}</button>`:"<span></span>"}</div>`;
+      <div><div class="who"><b>${esc(x.volunteer_name)}</b> shared God’s love with <b>${esc(x.person_name)}</b></div>${x.visit_type||x.comment?`<div class="note">${x.visit_type?`<span class="vtype">${esc(x.visit_type)}</span> `:""}${x.comment?esc(x.comment):""}</div>`:""}</div>
+      ${S.admin?`<div class="acts"><button class="btn quiet sm" data-editvisit="${esc(x.id)}" aria-label="Edit this visit" title="Edit">${ic("edit")}</button>
+      <button class="btn quiet danger sm" data-delvisit="${esc(x.id)}" aria-label="Delete this visit" title="Delete">${ic("trash")}</button></div>`:"<span></span>"}</div>`;
     }).join("");
   }
   return `<div class="panel flush"><div class="panel-h"><h2>Recent visits</h2><p class="sum">${esc(sum)}</p></div>
@@ -311,7 +334,19 @@ function dash(){
 }
 
 function admin(){
-  const sub=`<div class="seg">${[["vol","Volunteers"],["per","People to visit"],["adm","Admins"],["pw","Passcode"]].map(([k,l])=>`<button class="btn sm ${S.sub===k?"on":""}" data-sub="${k}">${l}</button>`).join("")}</div>`;
+  const sub=`<div class="seg">${[["vol","Volunteers"],["per","People to visit"],["types","Visit types"],["adm","Admins"],["pw","Passcode"]].map(([k,l])=>`<button class="btn sm ${S.sub===k?"on":""}" data-sub="${k}">${l}</button>`).join("")}</div>`;
+  if(S.sub==="types")return sub+`<div class="panel"><h2>Add a visit type</h2>
+  <p class="sum">Volunteers choose from these on the Connect form, for example Hospital visit or Phone call.</p>
+  <div class="field" style="margin-top:16px"><label for="nt">Name</label><input id="nt" maxlength="80" autocomplete="off"></div>
+  <div class="actions"><button class="btn pri" id="addtype">Add visit type</button></div></div>
+  <div class="panel flush"><div class="panel-h"><h2>Visit types (${S.types.length})</h2></div>
+  ${S.types.length?S.types.map(o=>S.editing===o.id?`<div class="item editing"><h3>Edit visit type</h3>
+  <div class="field" style="margin-top:0"><label for="etn">Name</label><input id="etn" maxlength="80" autocomplete="off" value="${esc(o.name)}"></div>
+  <div class="actions"><button class="btn pri" data-savetype="${esc(o.id)}">Save changes</button><button class="btn quiet" id="canceledit">Cancel</button></div></div>`
+  :`<div class="item typ"><div><b>${esc(o.name)}</b></div>
+  <div class="acts"><button class="btn quiet sm" data-edit="${esc(o.id)}" aria-label="Edit ${esc(o.name)}" title="Edit">${ic("edit")}</button>
+  <button class="btn quiet danger sm" data-deltype="${esc(o.id)}" aria-label="Remove ${esc(o.name)}" title="Remove">${ic("trash")}</button></div></div>`).join("")
+  :`<div class="empty">No visit types yet. Until you add one, the “Sharing God’s love with” menu stays hidden on the Connect form.</div>`}</div>`;
   if(S.sub==="pw")return sub+`<div class="panel"><h2>Volunteer passcode</h2>
   <p class="sum">${S.pwSet?"Volunteers enter this passcode to see visits and connect with someone. Changing it asks them to enter the new one.":"No passcode is set yet, so only admins can use the site. Set one to give volunteers access."}</p>
   <div class="field" style="margin-top:16px"><label for="npw">New passcode</label><input id="npw" type="text" autocomplete="off"><p class="hint">Use at least 4 characters. Avoid names and birthdays.</p></div>
@@ -354,10 +389,11 @@ document.addEventListener("click",async e=>{
   const t=e.target.closest("button");if(!t)return;
   if(t.id==="cancellogin"){S.tab="dash";return render()}
   if(t.id==="clearf"){S.fv="";S.fp="";return render()}
-  if(t.dataset.t){S.tab=t.dataset.t;S.editing=null;return render()}
+  if(t.dataset.t){S.tab=t.dataset.t;S.editing=null;S.editingVisit=null;return render()}
   if(t.dataset.sub){S.sub=t.dataset.sub;S.editing=null;return render()}
-  if(t.dataset.edit){S.editing=t.dataset.edit;render();const f=document.getElementById("en");if(f)f.focus();return}
-  if(t.id==="canceledit"){S.editing=null;return render()}
+  if(t.dataset.edit){S.editing=t.dataset.edit;render();const f=document.getElementById("en")||document.getElementById("etn");if(f)f.focus();return}
+  if(t.dataset.editvisit){S.editingVisit=t.dataset.editvisit;return render()}
+  if(t.id==="canceledit"){S.editing=null;S.editingVisit=null;return render()}
   if(t.dataset.psub){S.psub=t.dataset.psub;return render()}
   try{
     let r;
@@ -375,7 +411,8 @@ document.addEventListener("click",async e=>{
     if(t.id==="savevisit"){
       const v=S.vols.find(x=>x.id===val("sv")),p=S.people.find(x=>x.id===val("sp")),d=val("sd");
       if(!v||!p||!d)return toast("Choose a volunteer, a person and a date.",true);
-      r=await sb.rpc("submit_visit",{p:S.pass||"",v_id:v.id,pe_id:p.id,d,c:val("sc").trim()});
+      const stEl=document.getElementById("st");
+      r=await sb.rpc("submit_visit",{p:S.pass||"",v_id:v.id,pe_id:p.id,d,c:val("sc").trim(),t_id:stEl&&stEl.value?stEl.value:null});
       if(r.error)throw r.error;
       S.tab="dash";await load();toast("Saved. Thank you for serving.");
     }else if(t.id==="setpw"){
@@ -392,6 +429,33 @@ document.addEventListener("click",async e=>{
       r=await sb.from(isV?"volunteer_details":"person_details").insert(d);
       if(r.error)throw r.error;
       await load();toast(name+" added.");
+    }else if(t.id==="addtype"){
+      const name=val("nt").trim();if(!name)return toast("Enter a name for the visit type.",true);
+      if(S.types.some(o=>o.name.toLowerCase()===name.toLowerCase()))return toast("“"+name+"” is already on the list.",true);
+      r=await sb.from("visit_types").insert({name});
+      if(r.error)throw r.error;
+      await load();toast("“"+name+"” added.");
+    }else if(t.dataset.savetype){
+      const id=t.dataset.savetype,name=val("etn").trim(),old=S.types.find(o=>o.id===id);
+      if(!name)return toast("Enter a name for the visit type.",true);
+      if(S.types.some(o=>o.id!==id&&o.name.toLowerCase()===name.toLowerCase()))return toast("“"+name+"” is already on the list.",true);
+      r=await sb.from("visit_types").update({name}).eq("id",id);
+      if(r.error)throw r.error;
+      if(old&&old.name!==name){r=await sb.from("visits").update({visit_type:name}).eq("visit_type",old.name);if(r.error)throw r.error}
+      S.editing=null;await load();toast("Changes saved.");
+    }else if(t.dataset.deltype){
+      const who=S.types.find(o=>o.id===t.dataset.deltype);
+      if(!await ask("Remove "+(who?who.name:"this visit type")+"?","Past visits keep this label. It just won’t be offered for new visits.","Remove",true))return;
+      r=await sb.from("visit_types").delete().eq("id",t.dataset.deltype);
+      if(r.error)throw r.error;await load();toast("Removed.");
+    }else if(t.dataset.savevisit){
+      const id=t.dataset.savevisit,x=S.visits.find(o=>o.id===id);if(!x)return;
+      const vols=withCurrent(S.vols,x.volunteer_id,x.volunteer_name),ppl=withCurrent(S.people,x.person_id,x.person_name);
+      const v=vols.find(o=>o.id===val("evv")),p=ppl.find(o=>o.id===val("evp")),d=val("evd"),tEl=document.getElementById("evt");
+      if(!v||!p||!d)return toast("Choose a volunteer, a person and a date.",true);
+      r=await sb.from("visits").update({volunteer_id:v.id,volunteer_name:v.name,person_id:p.id,person_name:p.name,visit_date:d,visit_type:tEl&&tEl.value?tEl.value:null,comment:val("evn").trim()||null}).eq("id",id);
+      if(r.error)throw r.error;
+      S.editingVisit=null;await load();toast("Changes saved.");
     }else if(t.dataset.saveent){
       const id=t.dataset.saveent,isV=S.sub==="vol",name=val("en").trim();
       if(!name)return toast("Enter a name.",true);
@@ -437,6 +501,8 @@ document.addEventListener("input",e=>{
 document.addEventListener("keydown",e=>{
   if(e.key!=="Enter")return;
   if(e.target.id==="en"){e.preventDefault();const b=document.querySelector("[data-saveent]");if(b)b.click()}
+  if(e.target.id==="etn"){e.preventDefault();const b=document.querySelector("[data-savetype]");if(b)b.click()}
+  if(e.target.id==="nt"){e.preventDefault();document.getElementById("addtype").click()}
   if(e.target.id==="pw"){e.preventDefault();document.getElementById("unlock").click()}
   if(e.target.id==="le"){e.preventDefault();document.getElementById("sendlink").click()}
 });
