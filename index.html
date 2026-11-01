@@ -173,7 +173,7 @@ const val=id=>document.getElementById(id).value;
 const PW_KEY="mymm_passcode";
 const store=v=>{try{v?localStorage.setItem(PW_KEY,v):localStorage.removeItem(PW_KEY)}catch(e){}};
 const stored=()=>{try{return localStorage.getItem(PW_KEY)||""}catch(e){return ""}};
-const S={loading:true,tab:"dash",sub:"vol",psub:"vol",editing:null,editingVisit:null,types:[],user:null,admin:false,unlocked:false,pass:stored(),pwSet:false,vols:[],people:[],vd:{},pd:{},visits:[],admins:[],fv:"",fp:""};
+const S={loading:true,tab:"dash",sub:"vol",psub:"vol",editing:null,editingVisit:null,types:[],counts:{},user:null,admin:false,unlocked:false,pass:stored(),pwSet:false,vols:[],people:[],vd:{},pd:{},visits:[],admins:[],fv:"",fp:""};
 
 const IC={
   hist:'<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/>',
@@ -207,33 +207,34 @@ function ask(title,msg,ok,danger){
 }
 
 async function load(){
-  let admin=false,admins=[],unlocked=false,vols=[],people=[],visits=[],types=[],vd={},pd={},pwSet=false,note=null;
+  let admin=false,admins=[],unlocked=false,vols=[],people=[],visits=[],types=[],counts={},vd={},pd={},pwSet=false,note=null;
   if(S.user){
     const a=await sb.from("admins").select("email").order("email");
     admins=a.data||[];admin=admins.length>0;
   }
   if(admin){
-    const [v,p,vdr,pdr,vis,pw,vt]=await Promise.all([
+    const [v,p,vdr,pdr,vis,pw,vt,vc]=await Promise.all([
       sb.from("volunteers").select("id,name").order("name"),
       sb.from("people").select("id,name").order("name"),
       sb.from("volunteer_details").select("*"),
       sb.from("person_details").select("*"),
       sb.from("visits").select("*").order("visit_date",{ascending:false}).limit(500),
       sb.rpc("passcode_is_set"),
-      sb.from("visit_types").select("id,name")]);
-    vols=v.data||[];people=p.data||[];visits=vis.data||[];pwSet=pw.data===true;types=vt.data||[];
+      sb.from("visit_types").select("id,name"),
+      sb.rpc("get_visit_counts",{p:""})]);
+    vols=v.data||[];people=p.data||[];visits=vis.data||[];pwSet=pw.data===true;types=vt.data||[];counts=vc.data||{};
     (vdr.data||[]).forEach(r=>vd[r.volunteer_id]=r);
     (pdr.data||[]).forEach(r=>pd[r.person_id]=r);
   }else if(S.pass){
-    const [l,vis]=await Promise.all([sb.rpc("get_lists",{p:S.pass}),sb.rpc("get_visits",{p:S.pass})]);
+    const [l,vis,vc]=await Promise.all([sb.rpc("get_lists",{p:S.pass}),sb.rpc("get_visits",{p:S.pass}),sb.rpc("get_visit_counts",{p:S.pass})]);
     if(l.error||vis.error){
       if(/Incorrect passcode/i.test((l.error||vis.error).message||"")){S.pass="";store("");note="The passcode has changed. Enter the new one to continue."}
     }else{
-      unlocked=true;vols=(l.data&&l.data.volunteers)||[];people=(l.data&&l.data.people)||[];visits=vis.data||[];types=(l.data&&l.data.types)||[];
+      unlocked=true;vols=(l.data&&l.data.volunteers)||[];people=(l.data&&l.data.people)||[];visits=vis.data||[];types=(l.data&&l.data.types)||[];counts=vc.data||{};
     }
   }
   types=[...types].sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:"base"}));
-  Object.assign(S,{loading:false,admin,admins,unlocked,vols,people,visits,types,vd,pd,pwSet});
+  Object.assign(S,{loading:false,admin,admins,unlocked,vols,people,visits,types,counts,vd,pd,pwSet});
   render();
   if(note)toast(note,true);
 }
@@ -258,7 +259,8 @@ function people(){
   const empty=isV?"No volunteers yet.":"No one to visit yet.";
   const hint=S.admin?" Add them from the Admin tab.":" An admin can add them.";
   return seg+`<div class="panel flush"><div class="panel-h"><h2>${isV?"Volunteers":"People to visit"} (${list.length})</h2></div>
-  ${list.length?list.map(o=>`<div class="item people"><span class="av">${esc(initials(o.name))}</span><div class="pname"><b>${esc(o.name)}</b></div></div>`).join(""):`<div class="empty">${empty}${hint}</div>`}</div>`;
+  ${list.length?list.map(o=>{const n=isV?0:Number(S.counts[o.id])||0;
+  return `<div class="item people"><span class="av">${esc(initials(o.name))}</span><div class="pname"><b>${esc(o.name)}</b>${n?`<div class="note">God’s love has been shared ${n} ${n===1?"time":"times"}</div>`:""}</div></div>`}).join(""):`<div class="empty">${empty}${hint}</div>`}</div>`;
 }
 
 function skeleton(){return `<div class="panel" aria-busy="true"><div class="sk" style="width:38%"></div><div class="sk"></div><div class="sk" style="width:72%"></div></div>`}
