@@ -125,6 +125,7 @@ input:focus,select:focus,textarea:focus{outline:3px solid var(--ring);border-col
 .item.typ{grid-template-columns:1fr auto;align-items:center}
 .item .acts .btn,.visit .acts .btn{padding:4px 8px}
 .pname .note a{color:inherit;text-underline-offset:2px}
+.pname .note.love{color:var(--acc);font-weight:500}
 .vtype{display:inline-block;margin:0 2px 2px 0;padding:1px 10px;border-radius:999px;background:var(--tint);color:var(--acc-d);font-weight:600;font-size:.88rem;line-height:1.5}
 
 /* unlock and loading */
@@ -190,6 +191,10 @@ const hash=s=>{let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))>>>0;ret
 const initials=n=>String(n).trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase()||"?";
 const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const todayLocal=()=>ymd(new Date());
+// Icon for a visit type, chosen by keywords in its name. First match wins; anything else gets a heart.
+const TYPE_ICONS=[[/birthday|bday|cake/i,"🎂"],[/hospital|surgery|clinic|emergency/i,"🏥"],[/nursing|assisted|rehab|facility/i,"🏢"],[/\b(home|house)/i,"🏠"],[/phone|\bcall|\btext\b/i,"📞"],[/pray/i,"🙏"],[/\bcard|letter|mail|\bnote/i,"💌"],[/meal|food|lunch|dinner|breakfast|cook|\bbak(e|ing)|casserole/i,"🍲"],[/errand|shop|grocer|pick ?up|deliver/i,"🛒"],[/\bride\b|\bdrive|transport/i,"🚗"],[/flower/i,"💐"],[/gift/i,"🎁"],[/church|service|worship|communion/i,"⛪"]];
+const typeIcon=n=>{const s=String(n||"");for(const [re,i] of TYPE_ICONS)if(re.test(s))return i;return "💛"};
+const typeText=n=>typeIcon(n)+" "+n;
 const fmtPhone=s=>{const raw=String(s||"").trim(),d=raw.replace(/\D/g,""),n=d.length===11&&d[0]==="1"?d.slice(1):d;return n.length===10?n.slice(0,3)+"-"+n.slice(3,6)+"-"+n.slice(6):raw};
 const typePhone=s=>{if(/[a-z]/i.test(s))return s;let d=s.replace(/\D/g,"");if(d.length>10&&d[0]==="1")d=d.slice(1);d=d.slice(0,10);return d.length>6?d.slice(0,3)+"-"+d.slice(3,6)+"-"+d.slice(6):d.length>3?d.slice(0,3)+"-"+d.slice(3):d};
 const dparts=s=>{const x=new Date(s+"T12:00:00");return isNaN(x)?{mon:"",day:s,month:""}:{mon:x.toLocaleString("en-US",{month:"short"}),day:x.getDate(),month:x.toLocaleString("en-US",{month:"long",year:"numeric"})}};
@@ -262,7 +267,7 @@ function people(){
   const hint=S.admin?" Add them from the Admin tab.":" An admin can add them.";
   return seg+`<div class="panel flush"><div class="panel-h"><h2>${isV?"Volunteers":"People to visit"} (${list.length})</h2></div>
   ${list.length?list.map(o=>{const n=isV?0:Number(S.counts[o.id])||0,c=isV?{}:(S.contacts[o.id]||{}),addr=String(c.address||"").trim(),digits=String(c.phone||"").replace(/\D/g,"");
-  return `<div class="item people"><span class="av">${esc(initials(o.name))}</span><div class="pname"><b>${esc(o.name)}</b>${n?`<div class="note">God’s love has been shared ${n} ${n===1?"time":"times"}</div>`:""}`
+  return `<div class="item people"><span class="av">${esc(initials(o.name))}</span><div class="pname"><b>${esc(o.name)}</b>${n?`<div class="note love">God’s love has been shared ${n} ${n===1?"time":"times"}</div>`:""}`
   +(addr?`<div class="note"><a href="https://maps.google.com/?q=${encodeURIComponent(addr)}" target="_blank" rel="noopener">${esc(addr)}</a></div>`:"")
   +(digits?`<div class="note"><a href="tel:${esc(digits)}">${esc(fmtPhone(c.phone))}</a></div>`:"")
   +`</div></div>`}).join(""):`<div class="empty">${empty}${hint}</div>`}</div>`;
@@ -286,7 +291,7 @@ function sched(){
   ${none?`<div class="banner" style="margin:14px 0 0">An admin needs to add at least one volunteer and one person to visit before you can connect.</div>`:""}
   <div class="field" style="margin-top:16px"><label for="sv">Volunteer</label><select id="sv">${opt(S.vols)}</select></div>
   <div class="field"><label for="sp">Person to visit</label><select id="sp">${opt(S.people)}</select></div>
-  ${S.types.length?`<div class="field"><label for="st">Sharing God’s love with</label><select id="st">${opt(S.types)}</select></div>`:""}
+  ${S.types.length?`<div class="field"><label for="st">Sharing God’s love with</label><select id="st"><option value="">Choose…</option>${S.types.map(o=>`<option value="${esc(o.id)}">${esc(typeText(o.name))}</option>`).join("")}</select></div>`:""}
   <div class="field"><label for="sd">Date</label><input type="date" id="sd" value="${todayLocal()}"></div>
   <div class="field"><label for="sc">Notes</label><textarea id="sc" maxlength="1000" placeholder="Anything worth remembering (optional)"></textarea></div>
   <div class="actions"><button class="btn pri" id="savevisit">Save</button></div></div>`;
@@ -301,7 +306,7 @@ function visitEditor(x){
   return `<div class="visit editing"><h3>Edit this visit</h3>
   <div class="field" style="margin-top:0"><label for="evv">Volunteer</label><select id="evv">${opts(vols,x.volunteer_id)}</select></div>
   <div class="field"><label for="evp">Person to visit</label><select id="evp">${opts(ppl,x.person_id)}</select></div>
-  ${types.length?`<div class="field"><label for="evt">Sharing God’s love with</label><select id="evt"><option value="">None</option>${opts(types,x.visit_type||"",true)}</select></div>`:""}
+  ${types.length?`<div class="field"><label for="evt">Sharing God’s love with</label><select id="evt"><option value="">None</option>${types.map(o=>`<option value="${esc(o.name)}" ${o.name===(x.visit_type||"")?"selected":""}>${esc(typeText(o.name))}</option>`).join("")}</select></div>`:""}
   <div class="field"><label for="evd">Date</label><input type="date" id="evd" value="${esc(x.visit_date)}"></div>
   <div class="field"><label for="evn">Notes</label><textarea id="evn" maxlength="1000">${esc(x.comment)}</textarea></div>
   <div class="actions"><button class="btn pri" data-savevisit="${esc(x.id)}">Save changes</button><button class="btn quiet" id="canceledit">Cancel</button></div></div>`;
@@ -329,7 +334,7 @@ function dash(){
       const d=dparts(x.visit_date),head=d.month!==last?`<div class="month">${esc(d.month)}</div>`:"";last=d.month;
       if(S.admin&&S.editingVisit===x.id)return head+visitEditor(x);
       return head+`<div class="visit"><div class="dchip" aria-hidden="true"><div><i>${esc(d.mon)}</i><b>${esc(d.day)}</b></div></div>
-      <div><div class="who"><b>${esc(x.volunteer_name)}</b> shared God’s love with <b>${esc(x.person_name)}</b></div>${x.visit_type||x.comment?`<div class="note">${x.visit_type?`<span class="vtype">${esc(x.visit_type)}</span> `:""}${x.comment?esc(x.comment):""}</div>`:""}</div>
+      <div><div class="who"><b>${esc(x.volunteer_name)}</b> shared God’s love with <b>${esc(x.person_name)}</b></div>${x.visit_type||x.comment?`<div class="note">${x.visit_type?`<span class="vtype"><span aria-hidden="true">${typeIcon(x.visit_type)}</span> ${esc(x.visit_type)}</span> `:""}${x.comment?esc(x.comment):""}</div>`:""}</div>
       ${S.admin?`<div class="acts"><button class="btn quiet sm" data-editvisit="${esc(x.id)}" aria-label="Edit this visit" title="Edit">${ic("edit")}</button>
       <button class="btn quiet danger sm" data-delvisit="${esc(x.id)}" aria-label="Delete this visit" title="Delete">${ic("trash")}</button></div>`:"<span></span>"}</div>`;
     }).join("");
@@ -350,7 +355,7 @@ function admin(){
   ${S.types.length?S.types.map(o=>S.editing===o.id?`<div class="item editing"><h3>Edit visit type</h3>
   <div class="field" style="margin-top:0"><label for="etn">Name</label><input id="etn" maxlength="80" autocomplete="off" value="${esc(o.name)}"></div>
   <div class="actions"><button class="btn pri" data-savetype="${esc(o.id)}">Save changes</button><button class="btn quiet" id="canceledit">Cancel</button></div></div>`
-  :`<div class="item typ"><div><b>${esc(o.name)}</b></div>
+  :`<div class="item typ"><div><b><span aria-hidden="true">${typeIcon(o.name)}</span> ${esc(o.name)}</b></div>
   <div class="acts"><button class="btn quiet sm" data-edit="${esc(o.id)}" aria-label="Edit ${esc(o.name)}" title="Edit">${ic("edit")}</button>
   <button class="btn quiet danger sm" data-deltype="${esc(o.id)}" aria-label="Remove ${esc(o.name)}" title="Remove">${ic("trash")}</button></div></div>`).join("")
   :`<div class="empty">No visit types yet. Until you add one, the “Sharing God’s love with” menu stays hidden on the Connect form.</div>`}</div>`;
