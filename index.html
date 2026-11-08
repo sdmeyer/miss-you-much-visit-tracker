@@ -124,6 +124,7 @@ input:focus,select:focus,textarea:focus{outline:3px solid var(--ring);border-col
 .item.editing h3,.visit.editing h3{margin-bottom:14px}
 .item.typ{grid-template-columns:1fr auto;align-items:center}
 .item .acts .btn,.visit .acts .btn{padding:4px 8px}
+.pname .note .ci{display:inline-block;width:1.4em;text-align:center;margin-right:2px}
 .pname .note a{color:inherit;text-underline-offset:2px}
 .pname .note.love{color:var(--acc);font-weight:500}
 .vtype{display:inline-block;margin:0 2px 2px 0;padding:1px 10px;border-radius:999px;background:var(--tint);color:var(--acc-d);font-weight:600;font-size:.88rem;line-height:1.5}
@@ -175,7 +176,7 @@ const val=id=>document.getElementById(id).value;
 const PW_KEY="mymm_passcode";
 const store=v=>{try{v?localStorage.setItem(PW_KEY,v):localStorage.removeItem(PW_KEY)}catch(e){}};
 const stored=()=>{try{return localStorage.getItem(PW_KEY)||""}catch(e){return ""}};
-const S={loading:true,tab:"dash",sub:"vol",psub:"vol",editing:null,editingVisit:null,types:[],counts:{},contacts:{},user:null,admin:false,unlocked:false,pass:stored(),pwSet:false,vols:[],people:[],vd:{},pd:{},visits:[],admins:[],fv:"",fp:""};
+const S={loading:true,tab:"dash",sub:"vol",psub:"vol",editing:null,editingVisit:null,types:[],counts:{},contacts:{},vcontacts:{},user:null,admin:false,unlocked:false,pass:stored(),pwSet:false,vols:[],people:[],vd:{},pd:{},visits:[],admins:[],fv:"",fp:""};
 
 const IC={
   hist:'<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/>',
@@ -213,7 +214,7 @@ function ask(title,msg,ok,danger){
 }
 
 async function load(){
-  let admin=false,admins=[],unlocked=false,vols=[],people=[],visits=[],types=[],counts={},contacts={},vd={},pd={},pwSet=false,note=null;
+  let admin=false,admins=[],unlocked=false,vols=[],people=[],visits=[],types=[],counts={},contacts={},vcontacts={},vd={},pd={},pwSet=false,note=null;
   if(S.user){
     const a=await sb.from("admins").select("email").order("email");
     admins=a.data||[];admin=admins.length>0;
@@ -232,16 +233,19 @@ async function load(){
     (vdr.data||[]).forEach(r=>vd[r.volunteer_id]=r);
     (pdr.data||[]).forEach(r=>pd[r.person_id]=r);
   }else if(S.pass){
-    const [l,vis,vc,pc]=await Promise.all([sb.rpc("get_lists",{p:S.pass}),sb.rpc("get_visits",{p:S.pass}),sb.rpc("get_visit_counts",{p:S.pass}),sb.rpc("get_person_contacts",{p:S.pass})]);
+    const [l,vis,vc,pc,vcon]=await Promise.all([sb.rpc("get_lists",{p:S.pass}),sb.rpc("get_visits",{p:S.pass}),sb.rpc("get_visit_counts",{p:S.pass}),sb.rpc("get_person_contacts",{p:S.pass}),sb.rpc("get_volunteer_contacts",{p:S.pass})]);
     if(l.error||vis.error){
       if(/Incorrect passcode/i.test((l.error||vis.error).message||"")){S.pass="";store("");note="The passcode has changed. Enter the new one to continue."}
     }else{
-      unlocked=true;vols=(l.data&&l.data.volunteers)||[];people=(l.data&&l.data.people)||[];visits=vis.data||[];types=(l.data&&l.data.types)||[];counts=vc.data||{};contacts=pc.data||{};
+      unlocked=true;vols=(l.data&&l.data.volunteers)||[];people=(l.data&&l.data.people)||[];visits=vis.data||[];types=(l.data&&l.data.types)||[];counts=vc.data||{};contacts=pc.data||{};vcontacts=vcon.data||{};
     }
   }
-  if(admin)Object.keys(pd).forEach(id=>{contacts[id]={phone:pd[id].phone,address:pd[id].address}});
+  if(admin){
+    Object.keys(pd).forEach(id=>{contacts[id]={phone:pd[id].phone,address:pd[id].address}});
+    Object.keys(vd).forEach(id=>{vcontacts[id]={phone:vd[id].phone,email:vd[id].email}});
+  }
   types=[...types].sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:"base"}));
-  Object.assign(S,{loading:false,admin,admins,unlocked,vols,people,visits,types,counts,contacts,vd,pd,pwSet});
+  Object.assign(S,{loading:false,admin,admins,unlocked,vols,people,visits,types,counts,contacts,vcontacts,vd,pd,pwSet});
   render();
   if(note)toast(note,true);
 }
@@ -266,10 +270,11 @@ function people(){
   const empty=isV?"No volunteers yet.":"No one to visit yet.";
   const hint=S.admin?" Add them from the Admin tab.":" An admin can add them.";
   return seg+`<div class="panel flush"><div class="panel-h"><h2>${isV?"Volunteers":"People to visit"} (${list.length})</h2></div>
-  ${list.length?list.map(o=>{const n=isV?0:Number(S.counts[o.id])||0,c=isV?{}:(S.contacts[o.id]||{}),addr=String(c.address||"").trim(),digits=String(c.phone||"").replace(/\D/g,"");
+  ${list.length?list.map(o=>{const n=isV?0:Number(S.counts[o.id])||0,c=(isV?S.vcontacts:S.contacts)[o.id]||{},addr=String(c.address||"").trim(),email=String(c.email||"").trim(),digits=String(c.phone||"").replace(/\D/g,"");
   return `<div class="item people"><span class="av">${esc(initials(o.name))}</span><div class="pname"><b>${esc(o.name)}</b>${n?`<div class="note love">God’s love has been shared ${n} ${n===1?"time":"times"}</div>`:""}`
-  +(addr?`<div class="note"><a href="https://maps.google.com/?q=${encodeURIComponent(addr)}" target="_blank" rel="noopener">${esc(addr)}</a></div>`:"")
-  +(digits?`<div class="note"><a href="tel:${esc(digits)}">${esc(fmtPhone(c.phone))}</a></div>`:"")
+  +(addr?`<div class="note"><span class="ci" aria-hidden="true">🏠</span><a href="https://maps.google.com/?q=${encodeURIComponent(addr)}" target="_blank" rel="noopener">${esc(addr)}</a></div>`:"")
+  +(email?`<div class="note"><span class="ci" aria-hidden="true">✉️</span><a href="mailto:${esc(email)}">${esc(email)}</a></div>`:"")
+  +(digits?`<div class="note"><span class="ci" aria-hidden="true">📞</span><a href="tel:${esc(digits)}">${esc(fmtPhone(c.phone))}</a></div>`:"")
   +`</div></div>`}).join(""):`<div class="empty">${empty}${hint}</div>`}</div>`;
 }
 
