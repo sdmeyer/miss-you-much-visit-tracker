@@ -176,7 +176,7 @@ const val=id=>document.getElementById(id).value;
 const PW_KEY="mymm_passcode";
 const store=v=>{try{v?localStorage.setItem(PW_KEY,v):localStorage.removeItem(PW_KEY)}catch(e){}};
 const stored=()=>{try{return localStorage.getItem(PW_KEY)||""}catch(e){return ""}};
-const S={loading:true,tab:"dash",sub:"vol",psub:"vol",editing:null,editingVisit:null,types:[],counts:{},contacts:{},vcontacts:{},user:null,admin:false,unlocked:false,pass:stored(),pwSet:false,vols:[],people:[],vd:{},pd:{},visits:[],admins:[],fv:"",fp:""};
+const S={loading:true,tab:"dash",sub:"vol",psub:"vol",editing:null,editingVisit:null,types:[],counts:{},contacts:{},vcontacts:{},user:null,admin:false,unlocked:false,pass:stored(),pwSet:false,vols:[],people:[],vd:{},pd:{},visits:[],admins:[],fv:"",fp:"",days:30};
 
 const IC={
   hist:'<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/>',
@@ -317,21 +317,25 @@ function visitEditor(x){
   <div class="actions"><button class="btn pri" data-savevisit="${esc(x.id)}">Save changes</button><button class="btn quiet" id="canceledit">Cancel</button></div></div>`;
 }
 
+function cutoff(){if(!S.days)return"";const c=new Date();c.setDate(c.getDate()-S.days);return ymd(c)}
 function stats(){
-  const c=new Date();c.setDate(c.getDate()-30);const cut=ymd(c);
+  const cut=cutoff();
   const r=S.visits.filter(v=>v.visit_date>=cut);
   return{n:r.length,vols:new Set(r.map(v=>v.volunteer_id||v.volunteer_name)).size,ppl:new Set(r.map(v=>v.person_id||v.person_name)).size};
 }
 function dash(){
   let v=S.visits;
+  const cut=cutoff(),when=S.days?`in the last ${S.days} days`:"so far";
+  if(cut)v=v.filter(x=>x.visit_date>=cut);
   if(S.fv)v=v.filter(x=>x.volunteer_id===S.fv);
   if(S.fp)v=v.filter(x=>x.person_id===S.fp);
   const s=stats(),plural=(n,a,b)=>n===1?a:b;
-  const sum=s.n?`${s.n} ${plural(s.n,"visit","visits")} in the last 30 days. ${s.vols} ${plural(s.vols,"volunteer","volunteers")} reached ${s.ppl} ${plural(s.ppl,"person","people")}.`:"No visits in the last 30 days.";
+  const sum=s.n?`${s.n} ${plural(s.n,"visit","visits")} ${when}. ${s.vols} ${plural(s.vols,"volunteer","volunteers")} reached ${s.ppl} ${plural(s.ppl,"person","people")}.`:`No visits ${when}.`;
   const opt=(arr,sel)=>`<option value="">Everyone</option>`+arr.map(o=>`<option value="${esc(o.id)}" ${o.id===sel?"selected":""}>${esc(o.name)}</option>`).join("");
   let body="";
   if(!v.length){
     body=(S.fv||S.fp)?`<div class="empty">No visits match these filters.<br><button class="btn" id="clearf">Clear filters</button></div>`
+      :S.visits.length?`<div class="empty">No visits ${when}.<br><button class="btn" data-days="0">Show all</button></div>`
       :`<div class="empty">No visits yet.<br><button class="btn pri" data-t="sched">Connect</button></div>`;
   }else{
     let last="";
@@ -345,6 +349,7 @@ function dash(){
     }).join("");
   }
   return `<div class="panel flush"><div class="panel-h"><h2>Recent visits</h2><p class="sum">${esc(sum)}</p></div>
+  <div class="seg" role="group" aria-label="Time period" style="padding:16px 20px 0;margin:0">${[[30,"30 days"],[60,"60 days"],[90,"90 days"],[0,"All"]].map(([d,l])=>`<button class="btn sm ${S.days===d?"on":""}" data-days="${d}" aria-pressed="${S.days===d}">${l}</button>`).join("")}</div>
   <div class="filters"><div><label for="fv">Volunteer</label><select id="fv">${opt(S.vols,S.fv)}</select></div>
   <div><label for="fp">Person visited</label><select id="fp">${opt(S.people,S.fp)}</select></div>
   ${S.fv||S.fp?`<button class="btn quiet" id="clearf">Clear</button>`:"<span></span>"}</div>${body}</div>`;
@@ -406,6 +411,7 @@ document.addEventListener("click",async e=>{
   const t=e.target.closest("button");if(!t)return;
   if(t.id==="cancellogin"){S.tab="dash";return render()}
   if(t.id==="clearf"){S.fv="";S.fp="";return render()}
+  if(t.dataset.days!==undefined){S.days=Number(t.dataset.days);return render()}
   if(t.dataset.t){S.tab=t.dataset.t;S.editing=null;S.editingVisit=null;return render()}
   if(t.dataset.sub){S.sub=t.dataset.sub;S.editing=null;return render()}
   if(t.dataset.edit){S.editing=t.dataset.edit;render();const f=document.getElementById("en")||document.getElementById("etn");if(f)f.focus();return}
