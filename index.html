@@ -242,7 +242,7 @@ async function load(){
   }
   if(admin){
     Object.keys(pd).forEach(id=>{contacts[id]={phone:pd[id].phone,address:pd[id].address}});
-    Object.keys(vd).forEach(id=>{vcontacts[id]={phone:vd[id].phone,email:vd[id].email}});
+    Object.keys(vd).forEach(id=>{vcontacts[id]={phone:vd[id].phone,email:vd[id].email,address:vd[id].address}});
   }
   types=[...types].sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:"base"}));
   Object.assign(S,{loading:false,admin,admins,unlocked,vols,people,visits,types,counts,contacts,vcontacts,vd,pd,pwSet});
@@ -381,7 +381,7 @@ function admin(){
   return sub+`<div class="panel"><h2>${isV?"Add a volunteer":"Add a person to visit"}</h2>
   <div class="field" style="margin-top:16px"><label for="an">Name</label><input id="an" autocomplete="off"></div>
   <div class="row field"><div><label for="ae">Email</label><input id="ae" type="email" inputmode="email"></div><div><label for="ap">Phone</label><input id="ap" type="tel"></div></div>
-  ${isV?"":`<div class="field"><label for="aa">Address</label><input id="aa" autocomplete="off"></div>`}
+  <div class="field"><label for="aa">Address</label><input id="aa" autocomplete="off"></div>
   <div class="field"><label for="ac">Comments</label><textarea id="ac"></textarea></div>
   <div class="actions"><button class="btn pri" id="addent">${isV?"Add volunteer":"Add person"}</button></div></div>
   <div class="panel flush"><div class="panel-h"><h2>${isV?"Volunteers":"People to visit"} (${list.length})</h2></div>
@@ -389,7 +389,7 @@ function admin(){
   if(S.editing===o.id)return `<div class="item editing"><h3>Edit ${esc(o.name)}</h3>
   <div class="field" style="margin-top:0"><label for="en">Name</label><input id="en" autocomplete="off" value="${esc(o.name)}"></div>
   <div class="row field"><div><label for="ee">Email</label><input id="ee" type="email" inputmode="email" value="${esc(p.email)}"></div><div><label for="ep">Phone</label><input id="ep" type="tel" value="${esc(fmtPhone(p.phone))}"></div></div>
-  ${isV?"":`<div class="field"><label for="ea">Address</label><input id="ea" autocomplete="off" value="${esc(p.address)}"></div>`}
+  <div class="field"><label for="ea">Address</label><input id="ea" autocomplete="off" value="${esc(p.address)}"></div>
   <div class="field"><label for="ec">Comments</label><textarea id="ec">${esc(p.comments)}</textarea></div>
   <div class="actions"><button class="btn pri" data-saveent="${esc(o.id)}">Save changes</button><button class="btn quiet" id="canceledit">Cancel</button></div></div>`;
   const contact=[p.email,fmtPhone(p.phone)].filter(Boolean).map(esc).join(", ");return `<div class="item"><span class="av">${esc(initials(o.name))}</span>
@@ -441,7 +441,7 @@ document.addEventListener("click",async e=>{
       const isV=S.sub==="vol";
       r=await sb.from(isV?"volunteers":"people").insert({name}).select("id").single();
       if(r.error)throw r.error;
-      const d=isV?{volunteer_id:r.data.id}:{person_id:r.data.id,address:val("aa").trim()};
+      const d=isV?{volunteer_id:r.data.id,address:val("aa").trim()}:{person_id:r.data.id,address:val("aa").trim()};
       Object.assign(d,{email:val("ae").trim(),phone:val("ap").trim(),comments:val("ac").trim()});
       r=await sb.from(isV?"volunteer_details":"person_details").insert(d);
       if(r.error)throw r.error;
@@ -479,7 +479,7 @@ document.addEventListener("click",async e=>{
       const old=(isV?S.vols:S.people).find(x=>x.id===id);
       r=await sb.from(isV?"volunteers":"people").update({name}).eq("id",id);
       if(r.error)throw r.error;
-      const d=isV?{volunteer_id:id}:{person_id:id,address:val("ea").trim()};
+      const d=isV?{volunteer_id:id,address:val("ea").trim()}:{person_id:id,address:val("ea").trim()};
       Object.assign(d,{email:val("ee").trim(),phone:fmtPhone(val("ep")),comments:val("ec").trim()});
       r=await sb.from(isV?"volunteer_details":"person_details").upsert(d,{onConflict:isV?"volunteer_id":"person_id"});
       if(r.error)throw r.error;
